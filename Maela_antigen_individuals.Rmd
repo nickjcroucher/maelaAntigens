@@ -472,13 +472,13 @@ translation.df <-
 
 Load data from:
 
-* original serological study
+-   original serological study
 
-* MLST analyses, which are converted to GPSCs using the GPS data from Gladstone et al
+-   MLST analyses, which are converted to GPSCs using the GPS data from Gladstone et al
 
-* single genome studies from PMEN14, Hilty et al and Chewapreecha et al (latter study filtered through NFDS paper)
+-   single genome studies from PMEN14, Hilty et al and Chewapreecha et al (latter study filtered through NFDS paper)
 
-* deep sequencing data
+-   deep sequencing data
 
 ```{r Load epidemiological data}
 
@@ -637,19 +637,19 @@ combined.info %<>%
 
 There is some imputation of missing data:
 
-* if GPSC or serotype is unknown, then it is imputed from GPSC & serotype combinations observed within the same mother-child pair
+-   if GPSC or serotype is unknown, then it is imputed from GPSC & serotype combinations observed within the same mother-child pair
 
-* if it is still not known, then if there is a one-to-one relationship between serotype and GPSC in the single isolate Maela collection, then this is used to infer missing information
+-   if it is still not known, then if there is a one-to-one relationship between serotype and GPSC in the single isolate Maela collection, then this is used to infer missing information
 
 Where there is no direct genomic sampling of a given specimen, representative genomes were selected by:
 
-* taking a genome of the same GPSC & serotype from the same mother/child pair
+-   taking a genome of the same GPSC & serotype from the same mother/child pair
 
-* taking a genome of the same GPSC and serotype from any mother/child pair in the immunology cohort
+-   taking a genome of the same GPSC and serotype from any mother/child pair in the immunology cohort
 
-* taking a genome of the same GPSC and serotype from the wider cohort
+-   taking a genome of the same GPSC and serotype from the wider cohort
 
-``` {r Identify representatives where no sequence available}
+```{r Identify representatives where no sequence available}
 
 ##############
 # IMPUTATION #
@@ -868,7 +868,7 @@ write.table(lanes_list.out,
 
 This identified `{r} length(lanes_list.out)` assemblies as providing information on these carriage episodes.
 
-``` {bash, eval = FALSE}
+```{bash, eval = FALSE}
 
 # Load environment
 module load common-apps/anaconda3/2011.11
@@ -919,13 +919,13 @@ bsub -o anno_all.o -e anno_all.e -M 1000 -R 'select[mem>1000] rusage[mem=1000]' 
 
 ```
 
-* Plot separation of GPSCs for single isolates by accessory content
+-   Plot separation of GPSCs for single isolates by accessory content
 
-* Plot proportion of cohort exposed to each antigen over time
+-   Plot proportion of cohort exposed to each antigen over time
 
 Some other evaluations
 
-``` {r Evalate assemblies, fig.width = 8, fig.height = 10}
+```{r Evalate assemblies, fig.width = 8, fig.height = 10}
 
 load("Maela_antigens_epidemiological_data.Rdata")
 
@@ -1031,7 +1031,7 @@ cowplot::plot_grid(
       ),
       nrow = 3,
       ncol = 1,
-      labels = "AUTO"
+      labels = "auto"
     ),
     cowplot::get_legend(n50_plot)
   ),
@@ -1043,7 +1043,7 @@ cowplot::plot_grid(
 
 Note that all PBP alleles are treated as equivalent.
 
-``` {r Link COGs to sequences}
+```{r Link COGs to sequences}
 
 cog.df <-
   read.csv(archive::archive_read("maela_cog_assignments.csv.tar.gz"), header = FALSE)
@@ -1118,6 +1118,10 @@ ggplot(cog.frequency.df,
                             aes(label = cog, colour = outlier),
                             ) +
   scale_color_manual(values = c("Too high" = "red","Too low" = "orange")) +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+  ) +
   theme_bw() +
   theme(legend.position = "none")
 
@@ -1141,7 +1145,8 @@ cog.frequency.df[cog.frequency.df$mass_frequency > 0.35 & cog.frequency.df$maela
 # CLST2327713 - too low - transposase
 
 ```
-``` {r COG frequencies in deep sequencing data}
+
+```{r COG frequencies in deep sequencing data}
 
 deep_seq.cog.frequency.df <-
   maela.cog.df %>%
@@ -1176,6 +1181,10 @@ ggplot(deep_seq.cog.frequency.df,
                             aes(label = cog, colour = outlier),
                             ) +
   scale_color_manual(values = c("Too high" = "red","Too low" = "orange")) +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+  ) +
   theme_bw() +
   theme(legend.position = "none")
 
@@ -1185,8 +1194,7 @@ ggplot(deep_seq.cog.frequency.df,
 
 ```
 
-
-``` {r Generate matrix and analyse distribution by GPSC, fig.height = 11, fig.width = 8}
+```{r Generate matrix and analyse distribution by GPSC, fig.height = 11, fig.width = 8}
 
 # Convert to matrix-type dataset
 maela_presence_absence.df <-
@@ -1222,7 +1230,7 @@ maela_single_isolate_presence_absence.mat <-
 
 ```
 
-``` {bash Psp mapping analysis, eval = FALSE}
+```{bash Psp mapping analysis, eval = FALSE}
 
 # Run mapping to identify psp sequences
 module load common-apps/anaconda3/2011.11
@@ -1238,7 +1246,7 @@ bsub -M 4000 -R 'select[mem>4000] rusage[mem=4000]' -J psp_mapping[1-1117]%100 -
 
 Make variable antigen translation tables, and calculate how many distinct antigens may be present within each sequence dataset:
 
-``` {r Generate variable antigen translation tables}
+```{r Generate variable antigen translation tables}
 
 assign_by_matches <- function(df,threshold = 0) {
    df %<>%
@@ -1368,7 +1376,7 @@ pspC_alleles.df <- translate_psp_alleles("PspC",
 
 ```
 
-``` {r Identify PspA sequences}
+```{r Identify PspA sequences}
 
 pspA.raw.df <- 
   read.table(file = "maela_pspA.tab",
@@ -1396,7 +1404,7 @@ pspA.raw.df <-
 
 ```
 
-``` {r Plot inferred PspA distribution, fig.height = 7, fig.width = 8}
+```{r Plot inferred PspA distribution, fig.height = 7, fig.width = 8}
 
 # test by taking the top ranking allele if >600 reads
 # need to check whether completed for all mappings
@@ -1406,7 +1414,7 @@ plot_antigen_distribution(pspA.df)
 
 ```
 
-``` {r Identify PspC sequences}
+```{r Identify PspC sequences}
 
 pspC.raw.df <- 
   read.table(file = "maela_pspC.tab",
@@ -1434,7 +1442,7 @@ pspC.raw.df <-
 
 ```
 
-``` {r Plot inferred PspC distribution, fig.height = 7, fig.width = 8}
+```{r Plot inferred PspC distribution, fig.height = 7, fig.width = 8}
 
 # Was 500
 pspC.df <- assign_by_matches(pspC.raw.df, threshold = 1500)
@@ -1443,7 +1451,7 @@ plot_antigen_distribution(pspC.df)
 
 ```
 
-``` {r Extract zmp sequences, eval = FALSE}
+```{r Extract zmp sequences, eval = FALSE}
 
 # Get ZMP sequences
 bsub -M 4000 -R 'select[mem>4000] rusage[mem=4000]' -o get_zmp.o -e get_zmp.e ./get_zmp_sequences.pl
@@ -1458,7 +1466,7 @@ bsub -o kmer.b.o -e kmer.b.e -M 12000 -R 'select[mem>12000] rusage[mem=12000]' "
 
 We then extract the zmp distances:
 
-``` {r Identify ZmpA sequences}
+```{r Identify ZmpA sequences}
 
 return_zmp_distances <- function(zmp_fn) {
 
@@ -1494,7 +1502,7 @@ zmpA.dist.df <-
 
 ```
 
-``` {r Identify ZmpB sequences}
+```{r Identify ZmpB sequences}
 
 zmpB.dist.df <-
   return_zmp_distances("maela_zmpB.tab") %>%
@@ -1515,7 +1523,7 @@ zmpB.dist.df <-
 
 ```
 
-``` {r Make multipanel mapping plot, fig.width = 8, fig.height = 8}
+```{r Make multipanel mapping plot, fig.width = 8, fig.height = 8}
 
 
 cowplot::plot_grid(
@@ -1529,7 +1537,7 @@ cowplot::plot_grid(
       ),
       nrow = 2,
       ncol = 2,
-      labels = "AUTO"
+      labels = "auto"
     ),
     cowplot::get_legend(zmpB_mapping_plot)
   ),
@@ -1540,7 +1548,7 @@ cowplot::plot_grid(
 
 ```
 
-``` {r Plot inferred ZmpA distribution, fig.height = 7, fig.width = 8}
+```{r Plot inferred ZmpA distribution, fig.height = 7, fig.width = 8}
 
 zmpA.alleles.df <-
   read.table("massachusetts_zmpA_assignments.tab",
@@ -1560,7 +1568,7 @@ plot_antigen_distribution(zmpA.df)
 
 ```
 
-``` {r Plot inferred ZmpB distribution, fig.height = 7, fig.width = 8}
+```{r Plot inferred ZmpB distribution, fig.height = 7, fig.width = 8}
 
 zmpB.alleles.df <-
   read.table("massachusetts_zmpB_assignments.tab",
@@ -1580,7 +1588,7 @@ plot_antigen_distribution(zmpB.df)
 
 ```
 
-``` {r Plot pspA frequency comparison}
+```{r Plot pspA frequency comparison}
 
 compare_antigen_frequencies <- function(df) {
   comp_freq.df <-
@@ -1617,6 +1625,10 @@ plot_comparison_of_antigen_frequencies <- function(comp_freq.df) {
                                                        y = `Deep sequencing`,
                                                        label = allele)) +
     geom_abline(intercept = 0, slope = 1, linetype = 2) +
+    stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+    ) +
     theme_bw()
 }
 
@@ -1626,7 +1638,7 @@ pspA_freq_plot <-
 
 ```
 
-``` {r Plot pspC frequency comparison}
+```{r Plot pspC frequency comparison}
 
 pspC.freq.df <- compare_antigen_frequencies(pspC.df)
 pspC_freq_plot <-
@@ -1634,7 +1646,7 @@ pspC_freq_plot <-
 
 ```
 
-``` {r Plot zmpA frequency comparison}
+```{r Plot zmpA frequency comparison}
 
 zmpA.freq.df <- compare_antigen_frequencies(zmpA.df)
 zmpA_freq_plot <-
@@ -1642,7 +1654,7 @@ zmpA_freq_plot <-
 
 ```
 
-``` {r Plot zmpB frequency comparison}
+```{r Plot zmpB frequency comparison}
 
 zmpB.freq.df <- compare_antigen_frequencies(zmpB.df)
 zmpB_freq_plot <-
@@ -1650,7 +1662,7 @@ zmpB_freq_plot <-
 
 ```
 
-``` {r Plot multipanel frequency plots, fig.width = 8, fig.height = 8}
+```{r Plot multipanel frequency plots, fig.width = 8, fig.height = 8}
 
 cowplot::plot_grid(
   plotlist = list(
@@ -1661,12 +1673,12 @@ cowplot::plot_grid(
   ),
   nrow = 2,
   ncol = 2,
-  labels = "AUTO"
+  labels = "auto"
 )
 
 ```
 
-``` {r Create overall presence-absence matrix across lanes, fig.height = 11, fig.width = 8}
+```{r Create overall presence-absence matrix across lanes, fig.height = 11, fig.width = 8}
 
 variable_antigen_list <- rownames(igg.data)
 variable_antigen_list <- variable_antigen_list[grepl("PspA_",variable_antigen_list) | grepl("PspC_",variable_antigen_list) | grepl("ZmpA_",variable_antigen_list) | grepl("ZmpB_",variable_antigen_list)]
@@ -1711,7 +1723,7 @@ maela_variable_antigen.mat <-
 
 ```
 
-``` {bash Analyse zmpE distribution, eval = FALSE}
+```{bash Analyse zmpE distribution, eval = FALSE}
 
 # Search for zmpE sequences
 cd  /lustre/scratch118/infgen/team284/nc3/Maela_acc_genome/deep_sequencing_genomes/zmpE
@@ -1723,7 +1735,7 @@ bsub -o zmpE_blast.o -e zmpE_blast.e -M 1000 -R 'select[mem>1000] rusage[mem=100
 
 To analyse these data:
 
-``` {r Analyse ZmpE BLAST hits}
+```{r Analyse ZmpE BLAST hits}
 
 read_blast <- function(fn) {
   
@@ -1771,7 +1783,7 @@ zmpE.pa.df <- make_pa_df(zmpE.blast.df,"ZmpE",zmpE_threshold)
 
 Checking the top hit in `28042_1#51.contigs_velvet.fa`, the protein is adjacent to *ileS*, the recorded insertion site in Massachusetts SC12 non-typeables. The hit in `7054_6#3.contigs_velvet.fa` sits in the *zmpAD* insertion site.
 
-``` {bash Analyse phage distribution, eval = FALSE}
+```{bash Analyse phage distribution, eval = FALSE}
 
 cd /lustre/scratch118/infgen/team284/nc3/Maela_acc_genome/deep_sequencing_genomes/phage_search
 cat phi*dna prophage*dna > all_prophage.mfa
@@ -1779,7 +1791,7 @@ bsub -o phage_blast.o -e phage_blast.e -M 1000 -R 'select[mem>1000] rusage[mem=1
 
 ```
 
-``` {r Analyse prophage BLAST hits}
+```{r Analyse prophage BLAST hits}
 
 phage.blast.df <- 
   read_blast("maela_immunology_cohort_phage.blast.out")
@@ -1800,15 +1812,14 @@ PhageAmi.pa.df <- make_pa_df(phage.blast.df,"PhageAmi",phage_threshold)
 
 ```
 
-``` {bash Analyse PblB distribution, eval = FALSE}
+```{bash Analyse PblB distribution, eval = FALSE}
 
 cd /lustre/scratch118/infgen/team284/nc3/Maela_acc_genome/deep_sequencing_genomes/pblB_search
 bsub -o pblB_blast.o -e pblB_blast.e -M 1000 -R 'select[mem>1000] rusage[mem=1000]' tblastn -db maela_immunology_cohort_genomes.mfa -query pblB.aa -outfmt 6 -out maela_immunology_cohort_pblB.blast.out
 
 ```
 
-
-``` {r Analyse PblB BLAST hits}
+```{r Analyse PblB BLAST hits}
 
 pblB.blast.df <- read_blast("maela_immunology_cohort_pblB.blast.out")
 
@@ -1827,7 +1838,8 @@ pblB_threshold <- 500
 pblB.pa.df <- make_pa_df(pblB.blast.df,"PblB",pblB_threshold)
 
 ```
-``` {r Multi-panel plot of BLAST hits, fig.height = 8, fig.width = 8}
+
+```{r Multi-panel plot of BLAST hits, fig.height = 8, fig.width = 8}
 
 cowplot::plot_grid(
   plotlist = list(
@@ -1837,12 +1849,12 @@ cowplot::plot_grid(
   ),
   nrow = 3,
   ncol = 1,
-  labels = "AUTO"
+  labels = "auto"
 )
 
 ```
 
-``` {r Summarise additional antigens and create presence-absence matrix}
+```{r Summarise additional antigens and create presence-absence matrix}
 
 # Combine all additional antigens
 additional_antigens.df <-
@@ -1911,7 +1923,7 @@ if (length(in_genomes_but_not_array) == 0) {
 
 # Analyse the immunological data
 
-``` {r Processing of raw data}
+```{r Processing of raw data}
 
 antigen_classification.df <-
   read.csv(archive::archive_read("antigen_classification.csv.tar.gz")) %>%
@@ -1979,7 +1991,7 @@ antigens.df <-
 
 ```
 
-``` {r Plot complete frequencies across dataset, fig.width = 8, fig.height = 8}
+```{r Plot complete frequencies across dataset, fig.width = 8, fig.height = 8}
 
 antigen_frequencies_in_population.df <-
   as.data.frame(apply(complete_antigen_presence_absence.df[,-1],
@@ -2035,7 +2047,7 @@ ggplot(antigen_frequencies_in_population.df,
 
 ```
 
-``` {r Plot overall trends over time}
+```{r Plot overall trends over time}
 
 # Plot overall trends over time
 ggplot(antigens.df,
@@ -2056,11 +2068,11 @@ ggplot(antigens.df,
 
 ```
 
-* The variation within each class is greater than the variation between classes, or over time.
+-   The variation within each class is greater than the variation between classes, or over time.
 
-* ZmpA/B ratio changes over time, as does adhesin/SBP ratio
+-   ZmpA/B ratio changes over time, as does adhesin/SBP ratio
 
-``` {r Summary stats on individuals}
+```{r Summary stats on individuals}
 
 table(antigens.df %>% dplyr::select(codenum,sero_age) %>% dplyr::distinct() %>% dplyr::select(sero_age)) %>%
   kableExtra::kable() %>%
@@ -2068,8 +2080,7 @@ table(antigens.df %>% dplyr::select(codenum,sero_age) %>% dplyr::distinct() %>% 
 
 ```
 
-
-``` {r Summary stats on antigens}
+```{r Summary stats on antigens}
 
 table(antigens.df %>% dplyr::select(antigen,type) %>% dplyr::distinct() %>% dplyr::select(type)) %>%
   kableExtra::kable() %>%
@@ -2077,8 +2088,7 @@ table(antigens.df %>% dplyr::select(antigen,type) %>% dplyr::distinct() %>% dply
 
 ```
 
-
-``` {r Test whether antigens cluster together, fig.height = 10, fig.width = 8}
+```{r Test whether antigens cluster together, fig.height = 10, fig.width = 8}
 
 pbp_alleles <- c("CLS00355_a1","CLS00355_a2","CLS00355_a3","CLS00381_a1","CLS00381_a2","CLS00381_a3","CLS01435_a1","CLS01435_a2","CLS01435_a3","CLS01435_a4")
 pclA_alleles <- c("CLS01333", "CLS99466", "CLS03178", "CLS03616", "CLS03265")
@@ -2110,7 +2120,7 @@ pclA_alleles <- c("CLS01333", "CLS99466", "CLS03178", "CLS03616", "CLS03265")
 
 ```
 
-``` {r Plot t-SNE across individuals, fig.height = 11, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE across individuals, fig.height = 11, fig.width = 8, messages = FALSE}
 
 (all_individuals <-
   plot_tsne(t(igg.data),
@@ -2129,7 +2139,8 @@ pclA_alleles <- c("CLS01333", "CLS99466", "CLS03178", "CLS03616", "CLS03265")
 )
 
 ```
-``` {r Plot t-SNE across individuals before six months, fig.height = 11, fig.width = 8, messages = FALSE}
+
+```{r Plot t-SNE across individuals before six months, fig.height = 11, fig.width = 8, messages = FALSE}
 
 early_igg.data <-
   igg.data[,colnames(igg.data) %in% antigens.df$sero_specnum[antigens.df$sero_age %in% c("Cord","Birth","6 months")]]
@@ -2152,7 +2163,7 @@ early_igg.data <-
 
 ```
 
-``` {r Plot t-SNE across individuals after six months, fig.height = 11, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE across individuals after six months, fig.height = 11, fig.width = 8, messages = FALSE}
 
 late_igg.data <-
   igg.data[,colnames(igg.data) %in% antigens.df$sero_specnum[(antigens.df$sero_age %in% c("12 months","18 months","24 months"))]]
@@ -2176,7 +2187,7 @@ late_igg.data <-
 
 ```
 
-``` {r Plot t-SNE to test for batch effects, fig.height = 11, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE to test for batch effects, fig.height = 11, fig.width = 8, messages = FALSE}
 
 (all_individuals_late_by_slide <-
   plot_tsne(t(late_igg.data),
@@ -2201,7 +2212,7 @@ late_igg.data <-
 
 ## Run SIMLR clustering
 
-``` {r SIMLR clustering of samples, eval = FALSE}
+```{r SIMLR clustering of samples, eval = FALSE}
 
 cluster_range <- 2:10
 
@@ -2224,7 +2235,7 @@ save(sample_clustering_output,
 
 ```
 
-``` {r Plot number of SIMLR clusters, fig.height = 6, fig.width = 8}
+```{r Plot number of SIMLR clusters, fig.height = 6, fig.width = 8}
 
 load(file="sample_clustering_scoring.Rdata")
 
@@ -2240,7 +2251,7 @@ ggplot(data = tibble(
 
 ```
 
-``` {r Plot SIMLR output, fig.height = 9, fig.width = 8}
+```{r Plot SIMLR output, fig.height = 9, fig.width = 8}
 
 load(file="sample_clustering_output.Rdata")
 
@@ -2282,7 +2293,8 @@ ggplot(clustering_plot.df,
   theme(legend.position = "bottom")
 
 ```
-``` {r Plot clusters by age, fig.height = 8, fig.width = 8}
+
+```{r Plot clusters by age, fig.height = 8, fig.width = 8}
 
 (clustering_by_age_plot <- 
   ggplot(clustering_plot.df,
@@ -2301,7 +2313,8 @@ ggplot(clustering_plot.df,
 )
 
 ```
-``` {r Fisher exact test on age}
+
+```{r Fisher exact test on age}
 
 clustering_contingency_tables.df <-
   clustering_plot.df %>%
@@ -2321,7 +2334,7 @@ clustering_by_age.tab.test
 
 ```
 
-``` {r Fisher exact test on individual}
+```{r Fisher exact test on individual}
 
 clustering_by_early_late.df <-
   clustering_contingency_tables.df %>%
@@ -2339,7 +2352,7 @@ early_late_clustering.test
 
 ```
 
-``` {r Identify discriminant antigens, messages = FALSE}
+```{r Identify discriminant antigens, messages = FALSE}
 
 antigen_importance.ranking <-
   SIMLR::SIMLR_Feature_Ranking(sample_clustering_output$S, igg.data)
@@ -2368,7 +2381,7 @@ antigen_importance.df <-
 kruskal.test(rank~type,antigen_importance.df)
 ```
 
-``` {r Plot distribution over ranks}
+```{r Plot distribution over ranks}
 
 (importance_rank_plot <-
   ggplot(antigen_importance.df,
@@ -2392,9 +2405,9 @@ kruskal.test(rank~type,antigen_importance.df)
 
 ```
 
-Explanation of p values: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3278763/. 
+Explanation of p values: <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3278763/>.
 
-``` {r Plot SIMLR p values, fig.width = 8, fig.height = 8}
+```{r Plot SIMLR p values, fig.width = 8, fig.height = 8}
 
 rank_p_val_plot <-
   ggplot(antigen_importance.df,
@@ -2428,7 +2441,7 @@ cowplot::plot_grid(
                         ),
                         nrow = 1,
                         ncol = 2,
-                        labels = "AUTO"
+                        labels = "auto"
                        ),
     simlr_plot_legend
   ),
@@ -2439,11 +2452,11 @@ cowplot::plot_grid(
 
 ```
 
-* Cell wall and SBPs cause relatively little distinctiveness
+-   Cell wall and SBPs cause relatively little distinctiveness
 
-* Degradative (e.g. bgaA) and PspC and adhesion cause more distinctiveness
+-   Degradative (e.g. bgaA) and PspC and adhesion cause more distinctiveness
 
-``` {r Test for skewness}
+```{r Test for skewness}
 
 library(moments)
 
@@ -2494,7 +2507,7 @@ ggplot(ranked_antigen_distribution.df,
 
 ```
 
-``` {r Plot t-SNE across individuals before six months by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE across individuals before six months by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
 
 
 six_month_classification <-
@@ -2534,7 +2547,8 @@ early_igg_by_cluster.data <-
 #   ggrepel::geom_label_repel(data=. %>% dplyr::filter(sero_age == "6 months"), aes(label = codenum))
 
 ```
-``` {r Plot t-SNE across individuals at six months by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
+
+```{r Plot t-SNE across individuals at six months by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
 
 
 antigens.df %<>%
@@ -2568,7 +2582,7 @@ mid_igg.data <-
 
 ```
 
-``` {r Plot t-SNE across individuals after six months coloured by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE across individuals after six months coloured by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
 
 late_specnums <-
   antigens.df %>%
@@ -2603,7 +2617,8 @@ late_igg_by_cluster.data <-
 #   ggrepel::geom_label_repel(data=. %>% dplyr::filter(sero_age == "6 months"), aes(label = codenum))
 
 ```
-``` {r Plot t-SNE across individuals after later coloured by cluster, fig.height = 11, fig.width = 8, messages = FALSE,eval=FALSE}
+
+```{r Plot t-SNE across individuals after later coloured by cluster, fig.height = 11, fig.width = 8, messages = FALSE,eval=FALSE}
 
 just_late_specnums <-
   antigens.df %>%
@@ -2638,7 +2653,7 @@ save(all_individuals_just_late_by_cluster,
 
 ```
 
-``` {r Display late timepoint tSNE plot, fig.height = 11, fig.width = 8}
+```{r Display late timepoint tSNE plot, fig.height = 11, fig.width = 8}
 
 load("Maela_late_timepoint_tSNE.Rdata")
 
@@ -2649,7 +2664,7 @@ all_individuals_just_late_by_cluster
 
 ```
 
-``` {r Plot t-SNE across individuals without six months coloured by cluster, fig.height = 8, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE across individuals without six months coloured by cluster, fig.height = 8, fig.width = 8, messages = FALSE}
 
 no_6mo_specnums <-
   antigens.df %>%
@@ -2693,7 +2708,7 @@ no_6mo_by_cluster.data <-
 
 # Individual antigen analysis
 
-``` {r Create individual analysis data frame, fig.width = 8, fig.height = 10}
+```{r Create individual analysis data frame, fig.width = 8, fig.height = 10}
 
 sampling.df <-
   translation.df %>%
@@ -2735,7 +2750,7 @@ ggplot(sampling.df %>%
 
 ```
 
-``` {r Tabulate diagnosis at time of swabbing}
+```{r Tabulate diagnosis at time of swabbing}
 
 table(sampling.df %>%
         dplyr::filter(!is.na(specnum)) %>%
@@ -2744,7 +2759,8 @@ table(sampling.df %>%
   kableExtra::kable_styling(latex_options = "scale_down")
 
 ```
-``` {r Tabulate genome tallies}
+
+```{r Tabulate genome tallies}
 
 table(sampling.df %>%
         dplyr::filter(!is.na(specnum)) %>%
@@ -2754,7 +2770,7 @@ table(sampling.df %>%
 
 ```
 
-``` {r Combine individual data with genomic data}
+```{r Combine individual data with genomic data}
 
 
 no_genome_data <-
@@ -3086,7 +3102,7 @@ if (first_in_last_count < since_last_sample_count & last_month_count < since_las
 
 ```
 
-``` {r Combine with IgG data}
+```{r Combine with IgG data}
 
 antigen_exposure_response.df %<>%
   dplyr::left_join(antigens.df %>% dplyr::select(antigen,
@@ -3107,7 +3123,7 @@ antigen_exposure_response.df %<>%
 
 ## Plot IgG levels
 
-``` {r Plot immune responses based on first six months, fig.height = 11, fig.width = 8}
+```{r Plot immune responses based on first six months, fig.height = 11, fig.width = 8}
 
 plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
                             include_ages = c("6 months", "12 months", "18 months", "24 months"),
@@ -3199,7 +3215,8 @@ plot_igg_levels(antigen_exposure_response.df,
                 wrap_len = 15)
 
 ```
-``` {r Plot based on first month, fig.height = 11, fig.width = 8}
+
+```{r Plot based on first month, fig.height = 11, fig.width = 8}
 
 plot_igg_levels(antigen_exposure_response.df,
                 "FirstMonth",
@@ -3208,7 +3225,7 @@ plot_igg_levels(antigen_exposure_response.df,
 
 ```
 
-``` {r Plot based on lifetime exposure, fig.height = 11, fig.width = 8}
+```{r Plot based on lifetime exposure, fig.height = 11, fig.width = 8}
 
 plot_igg_levels(antigen_exposure_response.df,
                 "SinceBirth",
@@ -3223,7 +3240,7 @@ plot_igg_levels(antigen_exposure_response.df,
 
 ```
 
-``` {r Plot based on exposure in last month, fig.height = 11, fig.width = 8}
+```{r Plot based on exposure in last month, fig.height = 11, fig.width = 8}
 
 plot_igg_levels(antigen_exposure_response.df,
                 "LastMonth",
@@ -3232,7 +3249,7 @@ plot_igg_levels(antigen_exposure_response.df,
 
 ```
 
-``` {r Plot based on exposure since last test, fig.height = 11, fig.width = 8}
+```{r Plot based on exposure since last test, fig.height = 11, fig.width = 8}
 
 plot_igg_levels(antigen_exposure_response.df,
                 "LastSample",
@@ -3241,7 +3258,7 @@ plot_igg_levels(antigen_exposure_response.df,
 
 ```
 
-``` {r Plot based on first exposure in last month, fig.height = 11, fig.width = 8}
+```{r Plot based on first exposure in last month, fig.height = 11, fig.width = 8}
 
 plot_igg_levels(antigen_exposure_response.df,
                 "FirstInLastMonth",
@@ -3252,7 +3269,7 @@ plot_igg_levels(antigen_exposure_response.df,
 
 ## Plot IgG changes
 
-``` {r Plot changing immune responses based on first six months, fig.height = 11, fig.width = 8}
+```{r Plot changing immune responses based on first six months, fig.height = 11, fig.width = 8}
 
 plot_igg_change <- function(df,var,rlevel = NULL) {
   
@@ -3322,31 +3339,32 @@ plot_igg_change <- function(df,var,rlevel = NULL) {
 plot_igg_change(antigen_exposure_response.df,"FirstSixMonths")
 
 ```
-``` {r Plot change based on first month, fig.height = 11, fig.width = 8}
+
+```{r Plot change based on first month, fig.height = 11, fig.width = 8}
 
 plot_igg_change(antigen_exposure_response.df,"FirstMonth")
 
 ```
 
-``` {r Plot change based on lifetime exposure, fig.height = 11, fig.width = 8}
+```{r Plot change based on lifetime exposure, fig.height = 11, fig.width = 8}
 
 plot_igg_change(antigen_exposure_response.df,"SinceBirth")
 
 ```
 
-``` {r Plot change based on exposure in last month, fig.height = 11, fig.width = 8}
+```{r Plot change based on exposure in last month, fig.height = 11, fig.width = 8}
 
 plot_igg_change(antigen_exposure_response.df,"LastMonth")
 
 ```
 
-``` {r Plot change based on exposure since last test, fig.height = 11, fig.width = 8}
+```{r Plot change based on exposure since last test, fig.height = 11, fig.width = 8}
 
 plot_igg_change(antigen_exposure_response.df,"LastSample")
 
 ```
 
-``` {r Plot change based on first exposure in last month, fig.height = 11, fig.width = 8}
+```{r Plot change based on first exposure in last month, fig.height = 11, fig.width = 8}
 
 plot_igg_change(antigen_exposure_response.df,"FirstInLastMonth")
 
@@ -3354,7 +3372,7 @@ plot_igg_change(antigen_exposure_response.df,"FirstInLastMonth")
 
 # Plot changes in IgG between timepoints
 
-``` {r Plot changes between timepoints by type, fig.width = 8, fig.height = 8}
+```{r Plot changes between timepoints by type, fig.width = 8, fig.height = 8}
 
 ggplot(antigen_exposure_response.df %>%
          dplyr::filter(!(sero_age %in% c("Birth","Cord"))),
@@ -3383,7 +3401,7 @@ ggplot(antigen_exposure_response.df %>%
 
 ## Plot changes for intermediate-frequency antigens
 
-``` {r Plot changing immune responses to int freq proteins based on first six months, fig.height = 11, fig.width = 8}
+```{r Plot changing immune responses to int freq proteins based on first six months, fig.height = 11, fig.width = 8}
 
 variable_antigens.df <-
   tibble(
@@ -3489,31 +3507,31 @@ plot_int_freq_change(antigen_exposure_response.df,"FirstSixMonths",variable_anti
 
 ```
 
-``` {r Plot int freq change based on first month, fig.height = 11, fig.width = 8}
+```{r Plot int freq change based on first month, fig.height = 11, fig.width = 8}
 
 plot_int_freq_change(antigen_exposure_response.df,"FirstMonth",variable_antigens.df)
 
 ```
 
-``` {r Plot int freq change based on lifetime exposure, fig.height = 11, fig.width = 8}
+```{r Plot int freq change based on lifetime exposure, fig.height = 11, fig.width = 8}
 
 plot_int_freq_change(antigen_exposure_response.df,"SinceBirth",variable_antigens.df)
 
 ```
 
-``` {r Plot int freq change based on exposure in last month, fig.height = 11, fig.width = 8}
+```{r Plot int freq change based on exposure in last month, fig.height = 11, fig.width = 8}
 
 plot_int_freq_change(antigen_exposure_response.df,"LastMonth",variable_antigens.df)
 
 ```
 
-``` {r Plot int freq change based on exposure since last test, fig.height = 11, fig.width = 8}
+```{r Plot int freq change based on exposure since last test, fig.height = 11, fig.width = 8}
 
 plot_int_freq_change(antigen_exposure_response.df,"LastSample",variable_antigens.df)
 
 ```
 
-``` {r Plot int freq change based on first exposure in last month, fig.height = 11, fig.width = 8}
+```{r Plot int freq change based on first exposure in last month, fig.height = 11, fig.width = 8}
 
 plot_int_freq_change(antigen_exposure_response.df,"FirstInLastMonth",variable_antigens.df)
 
@@ -3521,7 +3539,7 @@ plot_int_freq_change(antigen_exposure_response.df,"FirstInLastMonth",variable_an
 
 ### Plot changes by number of exposures
 
-``` {r Plot responses by number of exposures}
+```{r Plot responses by number of exposures}
 
 int_freq_anti <-
     cog.frequency.df %>%
@@ -3566,7 +3584,7 @@ ggplot(antigen_exposure_response.df %>% dplyr::filter(antigen == "PspA_10"),
 
 # Compare immune responses with first coloniser
 
-``` {r Tabulate relative to NT as first coloniser, fig.height = 11, fig.width = 8}
+```{r Tabulate relative to NT as first coloniser, fig.height = 11, fig.width = 8}
 
 antigen_exposure_response.df %<>%
   dplyr::rowwise() %>%
@@ -3619,8 +3637,7 @@ ggplot(antigen_exposure_response.df,
 
 # Compare immune profiles with disease
 
-
-``` {r Plot differences between clusters, fig.height = 11, fig.width = 8}
+```{r Plot differences between clusters, fig.height = 11, fig.width = 8}
 
 # antigen_exposure_response.df %<>%
 #   dplyr::left_join(
@@ -3644,8 +3661,7 @@ plot_igg_levels(antigen_exposure_response.df,
 
 ```
 
-
-``` {r Tabulate relative to NTs}
+```{r Tabulate relative to NTs}
 
 clustering_info.df <-
   antigen_exposure_response.df %>%
@@ -3663,7 +3679,7 @@ ggplot(clustering_info.df,
 
 ```
 
-``` {r Tabulate relative to LRTI}
+```{r Tabulate relative to LRTI}
 
 clustering_info.df %<>%
   dplyr::left_join(genomic_immunology.df %>%
@@ -3681,7 +3697,7 @@ ggplot(clustering_info.df,
 
 ```
 
-``` {r Plot IgG levels by LRTI status, fig.height = 11, fig.width = 8}
+```{r Plot IgG levels by LRTI status, fig.height = 11, fig.width = 8}
 
 # antigen_exposure_response.df %<>%
 #   dplyr::left_join(genomic_immunology.df %>%
@@ -3710,8 +3726,7 @@ plot_igg_levels(antigen_exposure_response.df %>%
 
 ```
 
-
-``` {r Plot IgG change by LRTI status based on exposure, fig.height = 11, fig.width = 8}
+```{r Plot IgG change by LRTI status based on exposure, fig.height = 11, fig.width = 8}
 
 plot_igg_change(antigen_exposure_response.df %>%
                   dplyr::mutate(AnyLRTISinceLastSample = gsub("LRTI","Pneumonia",AnyLRTISinceLastSample)),
@@ -3719,7 +3734,7 @@ plot_igg_change(antigen_exposure_response.df %>%
 
 ```
 
-``` {r Plot IgG levels by severe LRTI status, fig.height = 11, fig.width = 8}
+```{r Plot IgG levels by severe LRTI status, fig.height = 11, fig.width = 8}
 
 plot_igg_levels(antigen_exposure_response.df %>%
                   dplyr::mutate(AnySevereLRTISinceLastSample = gsub("LRTI","Pneumonia",AnySevereLRTISinceLastSample)) %>%
@@ -3730,7 +3745,7 @@ plot_igg_levels(antigen_exposure_response.df %>%
 
 ```
 
-``` {r Plot IgG levels by very severe LRTI status, fig.height = 11, fig.width = 8}
+```{r Plot IgG levels by very severe LRTI status, fig.height = 11, fig.width = 8}
 
 plot_igg_levels(antigen_exposure_response.df %>%
   dplyr::mutate(AnyVerySevereLRTISinceLastSample = gsub("LRTI","Pneumonia",AnyVerySevereLRTISinceLastSample)) %>%
@@ -3743,7 +3758,7 @@ plot_igg_levels(antigen_exposure_response.df %>%
 
 ### Correlation in variable antigen responses
 
-``` {r Plot PspA correlations, fig.height = 10, fig.width = 8}
+```{r Plot PspA correlations, fig.height = 10, fig.width = 8}
 
 get_age_specific_cor_df <- function(age,antigen_df = NA,antigen_type = NA) {
   
@@ -3843,8 +3858,9 @@ plot_variable_antigen_cor(pspA_cor)
 # For presentation
 # (pspA_cor_plot <- plot_variable_antigen_cor(pspA_cor)  + theme(legend.position = "right",legend.key.size = unit(1.5, 'cm'),legend.title = element_text(size=15),legend.text = element_text(size=15),axis.text = element_text(size=10)))
 
-``` 
-``` {r Plot PspA levels, fig.height = 8, fig.width = 8}
+```
+
+```{r Plot PspA levels, fig.height = 8, fig.width = 8}
 
 plot_var_immunity_level <- function(df,antigen_type,cor_df) {
   
@@ -3870,7 +3886,7 @@ plot_var_immunity_level(antigen_exposure_response.df,"PspA",pspA_cor)
 
 ```
 
-``` {r Plot PspA frequencies against responses}
+```{r Plot PspA frequencies against responses}
 
 pspA_comparison.df <-
   pspA.freq.df %>%
@@ -3893,7 +3909,7 @@ ggplot(pspA_comparison.df,
 
 ```
 
-``` {r Plot PspC correlations, fig.height = 22, fig.width = 16}
+```{r Plot PspC correlations, fig.height = 22, fig.width = 16}
 
 pspC_cor <- get_cor_df(antigen_exposure_response.df,"PspC")
 plot_variable_antigen_cor(pspC_cor) +
@@ -3901,13 +3917,13 @@ plot_variable_antigen_cor(pspC_cor) +
 
 ```
 
-``` {r Plot PspC levels, fig.height = 8, fig.width = 8}
+```{r Plot PspC levels, fig.height = 8, fig.width = 8}
 
 plot_var_immunity_level(antigen_exposure_response.df,"PspC",pspC_cor)
 
 ```
 
-``` {r Plot PspC frequencies against responses}
+```{r Plot PspC frequencies against responses}
 
 pspC_comparison.df <-
   pspC.freq.df %>%
@@ -3930,28 +3946,27 @@ ggplot(pspC_comparison.df,
 
 ```
 
-``` {r Plot ZmpA correlations, fig.height = 10, fig.width = 8}
+```{r Plot ZmpA correlations, fig.height = 10, fig.width = 8}
 
 zmpA_cor <- get_cor_df(antigen_exposure_response.df,"ZmpA")
 plot_variable_antigen_cor(zmpA_cor)
 
 ```
 
-``` {r Plot ZmpA levels, fig.height = 8, fig.width = 8}
+```{r Plot ZmpA levels, fig.height = 8, fig.width = 8}
 
 plot_var_immunity_level(antigen_exposure_response.df,"ZmpA",zmpA_cor)
 
 ```
 
-
-``` {r Plot ZmpB correlations, fig.height = 10, fig.width = 8}
+```{r Plot ZmpB correlations, fig.height = 10, fig.width = 8}
 
 zmpB_cor <- get_cor_df(antigen_exposure_response.df,"ZmpB")
 plot_variable_antigen_cor(zmpB_cor)
 
 ```
 
-``` {r Plot ZmpB levels, fig.height = 8, fig.width = 8}
+```{r Plot ZmpB levels, fig.height = 8, fig.width = 8}
 
 plot_var_immunity_level(antigen_exposure_response.df,"ZmpB",zmpB_cor)
 
@@ -3959,7 +3974,7 @@ plot_var_immunity_level(antigen_exposure_response.df,"ZmpB",zmpB_cor)
 
 ### Mixed effects modelling of the level of IgG binding
 
-``` {r IgG binding mixed effects model}
+```{r IgG binding mixed effects model}
 
 library(lme4)
 library(sjPlot)
@@ -4001,7 +4016,7 @@ igg.model_3 <-
 
 ```
 
-``` {r Model comparison}
+```{r Model comparison}
 
 #load("Maela_antigens_igg_model_fits.Rdata")
 
@@ -4011,13 +4026,13 @@ anova(igg.model_1,igg.model_3)
 
 ```
 
-``` {r Plot coefficients, fig.height = 11, fig.width = 8}
+```{r Plot coefficients, fig.height = 11, fig.width = 8}
 
 sjPlot::plot_model(igg.model_1)
 
 ```
 
-``` {r Tabulate model output}
+```{r Tabulate model output}
 
 sjPlot::tab_model(igg.model_1)
 
@@ -4025,7 +4040,7 @@ sjPlot::tab_model(igg.model_1)
 
 # move to 1572
 
-``` {r Plot trends over time, fig.height = 8, fig.width = 8}
+```{r Plot trends over time, fig.height = 8, fig.width = 8}
 
 igg_prediction.df <-
   expand.grid("sero_age" = base::structure(c(1L,2L,3L,4L,5L,6L), levels = c("Cord", "Birth", "6 months", "12 months", "18 months", "24 months"), class = "factor"),
@@ -4057,7 +4072,7 @@ ggplot(igg_prediction.df,
 
 ```
 
-``` {r Compare with raw data, fig.height = 8, fig.width = 8}
+```{r Compare with raw data, fig.height = 8, fig.width = 8}
 
 (model_comp_raw_data_plot <-
   ggplot(antigen_exposure_response.df,
@@ -4088,7 +4103,8 @@ ggplot(igg_prediction.df,
 )
 
 ```
-``` {r Fit logit model to exposed or not exposed}
+
+```{r Fit logit model to exposed or not exposed}
 
 fit_saturation_model <- function(l.df) {
   a_start <- 0.5
@@ -4157,7 +4173,7 @@ ggplot(exposure_summary.df,
 
 ```
 
-``` {r Plot factor C}
+```{r Plot factor C}
 
 ggplot(exposure_summary.df,
        aes(x = type,
@@ -4169,7 +4185,7 @@ ggplot(exposure_summary.df,
 
 ```
 
-``` {r Plot examples of IgG responses increasing with exposures, fig.height = 11, fig.width = 8}
+```{r Plot examples of IgG responses increasing with exposures, fig.height = 11, fig.width = 8}
 
 n_exp = 0:24
 
@@ -4205,7 +4221,8 @@ ggplot(exposure_summary_plot.df,
     theme(strip.background = element_blank())
 
 ```
-``` {r Seroconversion for those with large exposure values, fig.height = 11, fig.width = 8}
+
+```{r Seroconversion for those with large exposure values, fig.height = 11, fig.width = 8}
 
 n_exp = 0:24
 
@@ -4245,7 +4262,7 @@ ggplot(example_exposure_summary_plot.df,
 
 ### Fit mixed models to understand clustering
 
-``` {r Mixed effects models to understand clustering - data prep}
+```{r Mixed effects models to understand clustering - data prep}
 
 library(lme4)
 
@@ -4268,7 +4285,7 @@ mef_input_with_clustering.df <-
 
 ```
 
-``` {r Mixed effects models to understand clustering - fit models}
+```{r Mixed effects models to understand clustering - fit models}
 
 igg.no_clustering_model_1 <-
   lmer(igg ~ sero_age + type + (1|codenum) + 0,
@@ -4342,7 +4359,7 @@ igg.int_clustering_model_4 <-
 
 ```
 
-``` {r Model comparison with clustering}
+```{r Model comparison with clustering}
 
 #load("Maela_antigens_igg_model_fits_with_clustering.Rdata")
 
@@ -4366,7 +4383,7 @@ ggplot(clustering_model_comparison.df,
 
 ```
 
-``` {r Tabulate model comparisons}
+```{r Tabulate model comparisons}
 
 clustering_model_comparison.df %>%
   kableExtra::kable() %>%
@@ -4374,13 +4391,13 @@ clustering_model_comparison.df %>%
 
 ```
 
-``` {r Plot coefficients with clustering}
+```{r Plot coefficients with clustering}
 
 sjPlot::tab_model(igg.int_clustering_model_3)
 
 ```
 
-``` {r Plot prediction againt observation for responses by cluster, fig.height = 8, fig.width = 8}
+```{r Plot prediction againt observation for responses by cluster, fig.height = 8, fig.width = 8}
 
 igg.int_clustering_model_4_predictions <- predict(igg.int_clustering_model_4)
 
@@ -4401,11 +4418,34 @@ ggplot(inheritance_and_exposure_with_predictions.df,
                       aesthetics = c("fill","colour"),
                       drop = TRUE, limits = force,
                       name = "Protein type") +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+  ) +
+  facet_grid(sero_age~type) +
   theme_bw()
 
 ```
 
-``` {r Tabulate model output with clustering, fig.height = 8, fig.width = 8}
+```{r Plot simple prediction againt observation for responses by cluster, fig.height = 8, fig.width = 8}
+
+ggplot(inheritance_and_exposure_with_predictions.df,
+       aes(x = igg,
+           y = Prediction)) +
+  geom_point(alpha = 0.25,
+             size = 0.25) +
+  geom_smooth(method = "lm") +
+  xlab("Observed IgG level") +
+  ylab("Predicted IgG level") +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+  ) +
+  theme_bw()
+
+```
+
+```{r Tabulate model output with clustering, fig.height = 8, fig.width = 8}
 
 igg_prediction_with_clustering.df <-
   expand.grid("sero_age" = base::structure(1:6, levels = c("Cord", "Birth", "6 months", "12 months", "18 months", "24 months"), class = "factor"),
@@ -4444,7 +4484,8 @@ ggplot(igg_prediction_with_clustering.df,
   ylab("Predicted IgG level")
 
 ```
-``` {r Split by antigen type, fig.height = 9, fig.width = 8}
+
+```{r Split by antigen type, fig.height = 9, fig.width = 8}
 
 ggplot(igg_prediction_with_clustering.df,
        aes(x = sero_age,
@@ -4466,7 +4507,7 @@ ggplot(igg_prediction_with_clustering.df,
 
 ```
 
-``` {r Compare with raw data and clustering, fig.height = 11, fig.width = 8}
+```{r Compare with raw data and clustering, fig.height = 11, fig.width = 8}
 
 ggplot(antigen_exposure_response.df,
        aes(x = sero_age,
@@ -4494,7 +4535,7 @@ ggplot(antigen_exposure_response.df,
 
 ```
 
-``` {r Simple plot by type from MEF, fig.width = 8}
+```{r Simple plot by type from MEF, fig.width = 8}
 
 mef_type.df <-
   as.data.frame(coef(igg.int_clustering_model_4)[1]) %>%
@@ -4565,7 +4606,8 @@ ggplot(mef_type.df,
   theme_bw()
 
 ```
-``` {r Simpler comparison of model output by type, fig.width = 8}
+
+```{r Simpler comparison of model output by type, fig.width = 8}
 
 simple_mef_type.df <-
   igg_prediction_with_clustering.df %>%
@@ -4601,7 +4643,7 @@ simple_mef_type.df <-
 
 ```
 
-``` {r What causes a transition between clusters}
+```{r What causes a transition between clusters}
 
 transitions.df <-
   antigen_exposure_response.df %>%
@@ -4623,7 +4665,7 @@ ggplot(transitions.df,
 
 ```
 
-``` {r Test for consistent rises to final timepoint across clusters, fig.height = 11, fig.width = 8}
+```{r Test for consistent rises to final timepoint across clusters, fig.height = 11, fig.width = 8}
 
 # Obsolete and very slow?
 igg_levels_by_cluster.df <-
@@ -4693,7 +4735,7 @@ ggplot(igg_levels_by_cluster.df,
 
 ```
 
-``` {r What determines cluster membership}
+```{r What determines cluster membership}
 
 lrti_counts.df <-
   antigen_exposure_response.df %>%
@@ -4736,7 +4778,7 @@ fisher.test(table(combined_clustering_info.df$FinalCluster,combined_clustering_i
 
 ```
 
-``` {r LRTI by cluster}
+```{r LRTI by cluster}
 
 ggplot(combined_clustering_info.df,
        aes(x = FinalCluster,
@@ -4747,7 +4789,7 @@ ggplot(combined_clustering_info.df,
 
 ```
 
-``` {r Exposures to different Zmp}
+```{r Exposures to different Zmp}
 
 early_zmp_exposures.df <-
   antigen_exposure_response.df %>%
@@ -4786,9 +4828,9 @@ ggplot(early_zmp_exposures.df,
 
 ```
 
-## How to immune responses mature?
+## How do immune responses mature?
 
-``` {r What type of rise?, fig.height = 8, fig.width = 8}
+```{r What type of rise?, fig.height = 8, fig.width = 8}
 
 summarise_igg_distributions.df <-
   antigen_exposure_response.df %>%
@@ -4820,7 +4862,8 @@ ggplot(summarise_igg_distributions.df,
   xlab("Age")
 
 ```
-``` {r Plot quantiles, fig.height = 10, fig.width = 8}
+
+```{r Plot quantiles, fig.height = 10, fig.width = 8}
 
 resummarise_igg_distributions.df <-
   antigen_exposure_response.df %>%
@@ -4851,7 +4894,7 @@ ggplot(resummarise_igg_distributions.df,
 
 # Test correlation between early samples
 
-``` {r Plot early sample correlations, fig.height = 8, fig.width = 4}
+```{r Plot early sample correlations, fig.height = 8, fig.width = 4}
 
 early_sample_correlations.df <-
   antigen_exposure_response.df %>%
@@ -4886,6 +4929,20 @@ early_sample_correlations.df <-
                                                  "cor6to_12mo","cor6to_18mo","cor6to_24mo")
                                       )
                   )
+
+early_sample_correlation_tests.df <-
+  early_sample_correlations.df %>%
+    dplyr::group_by(type,comparison) %>%
+    rstatix::wilcox_test(correlation ~ 1,
+                             mu = 0,
+                             paired = FALSE,
+                             p.adjust.method = "holm") %>%
+    rstatix::adjust_pvalue() %>%
+    rstatix::add_significance("p.adj") %>%
+    dplyr::ungroup() %>%
+    rstatix::add_xy_position(x = "type", dodge = 1)
+
+
 
 outlier_labels_1.df <-
   early_sample_correlations.df %>%
@@ -4923,6 +4980,7 @@ d_width = 0.75
                             "18 months",
                             "24 months")
                      ) +
+    scale_y_continuous(limits = c(-0.75,1.2)) +
     scale_colour_manual(values = type_palette,
                         aesthetics = c("fill","colour"),
                         drop = TRUE, limits = force,
@@ -4941,7 +4999,6 @@ d_width = 0.75
                               ) +
     geom_hline(yintercept = 0, linetype = 4) +
     theme_bw() +
-    ylim(c(-0.75,1)) +
     ylab("Pearson correlation coefficient with umbilical cord sample") +
     xlab("Comparator sample") +
     facet_wrap(.~type, nrow = 5) +
@@ -4950,12 +5007,16 @@ d_width = 0.75
           strip.background = element_blank()) +
     guides(colour = guide_legend(nrow = 1, title.position = "top"),
            fill = guide_legend(nrow = 1, title.position = "top"),
-           )
+           ) +
+    stat_pvalue_manual(early_sample_correlation_tests.df %>% dplyr::filter(!grepl("cor6to",comparison)),
+                       color = "type",
+                       x = "comparison",
+                       y.position = 1.1)
 )
 
 ```
 
-``` {r Plot later correlations, fig.height = 8, fig.width = 4}
+```{r Plot later correlations, fig.height = 8, fig.width = 4}
 
 outlier_labels_1b.df <-
   early_sample_correlations.df %>%
@@ -4986,7 +5047,8 @@ outlier_labels_1b.df <-
     scale_x_discrete(labels = c("12 months",
                                 "18 months",
                                 "24 months")
-                     ) +    
+                     ) +
+    scale_y_continuous(limits = c(-0.75,1.2)) +
     scale_colour_manual(values = type_palette,
                         aesthetics = c("fill","colour"),
                         drop = TRUE, limits = force,
@@ -5005,7 +5067,6 @@ outlier_labels_1b.df <-
                               ) +
     geom_hline(yintercept = 0, linetype = 2) +
     theme_bw() +
-    ylim(c(-0.75,1)) +
     xlab("Comparator sample") +
     ylab("Pearson correlation coefficient with umbilical cord sample") +
     facet_wrap(.~type, nrow = 5) +
@@ -5013,14 +5074,52 @@ outlier_labels_1b.df <-
           legend.position = "bottom",
           strip.background = element_blank()) +
     guides(colour = guide_legend(nrow = 1, title.position = "top"),
-           fill = guide_legend(nrow = 1, title.position = "top"))
+           fill = guide_legend(nrow = 1, title.position = "top")) +
+    stat_pvalue_manual(early_sample_correlation_tests.df %>% dplyr::filter(grepl("cor6to",comparison)),
+                       color = "type",
+                       x = "comparison",
+                       y.position = 1.1)
+)
+
+```
+
+Plot an example correlation:
+
+```{r Plot example early v late correlation}
+
+plot_example_correlation <- function(antigen_name) {
+  
+  example_early_late_correlation.df <-
+    antigen_exposure_response.df %>%
+      dplyr::filter(antigen == antigen_name & sero_age %in% c("Cord","18 months")) %>%
+      dplyr::select(codenum,sero_age,igg) %>%
+      tidyr::pivot_wider(id_cols = codenum, values_from = igg, names_from = sero_age)
+
+  ggplot(example_early_late_correlation.df,
+         aes(x = Cord,
+             y = `18 months`)) +
+    geom_smooth(method = "lm") +
+    stat_cor(method = "pearson",
+            aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~"))) +
+    geom_point() +
+    ggtitle(antigen_name) +
+    theme_bw()
+}
+
+cowplot::plot_grid(
+  plotlist = list(
+    plot_example_correlation("CLS01620"), # Close to 0.25
+    plot_example_correlation("CLS00682") # Close to 0.1
+  ),
+  nrow = 1,
+  labels = "auto"
 )
 
 ```
 
 Plot heritability against frequency in population?
 
-``` {r Plot heriability against frequency}
+```{r Plot heriability against frequency}
 
 heritability_frequency.df <-
   early_sample_correlations.df %>%
@@ -5041,7 +5140,7 @@ ggplot(heritability_frequency.df,
 
 ```
 
-``` {r Plot maternal Ab levels by cluster, fig.height = 11, fig.width = 8}
+```{r Plot maternal Ab levels by cluster, fig.height = 11, fig.width = 8}
 
 maternal_levels_and_clusters.df <-
     antigen_exposure_response.df %>%
@@ -5110,8 +5209,7 @@ cluster_test.df <-
 
 ```
 
-
-``` {r Alternative fit antigen models to inheritance and exposure, fig.height = 11, fig.width = 8}
+```{r Alternative fit antigen models to inheritance and exposure, fig.height = 11, fig.width = 8}
 
 inheritance_and_exposure.df <-
   antigen_exposure_response.df %>%
@@ -5177,7 +5275,7 @@ inheritance.antigen_model <-
 
 ```
 
-``` {r Fit models including exposure}
+```{r Fit models including exposure}
 
 inheritance_and_exposure_since_birth.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + (1|codenum) + 0,
@@ -5218,7 +5316,7 @@ ggplot(antigen_response_model_comparisons.df,
 
 ```
 
-``` {r Plot best fitting model properties, fig.height = 8, fig.width = 8}
+```{r Plot best fitting model properties, fig.height = 8, fig.width = 8}
 
 get_type_values <- function(df) {
   df  %>%
@@ -5639,7 +5737,8 @@ exposure_outlier_labels.df <-
 )
 
 ```
-``` {r Plot types by age, fig.width = 8, fig.height = 8}
+
+```{r Plot types by age, fig.width = 8, fig.height = 8}
 
 ggplot(antigen_response_analysis.df %>%
          dplyr::filter(IgG_response %in% c("month_6",
@@ -5673,7 +5772,7 @@ ggplot(antigen_response_analysis.df %>%
 
 ```
 
-``` {r Plot random effects by individual}
+```{r Plot random effects by individual}
 
 (individuals_comparison_plot <-
   ggplot(individuals_model_comparisons.df,
@@ -5683,12 +5782,16 @@ ggplot(antigen_response_analysis.df %>%
   geom_smooth(method = "lm",formula=y~1+x) +
   xlab("Individual random effect in universal exposure model") +
   ylab("Individual random effect in partial exposure model") +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+  ) +
   theme_bw()
 )
 
 ```
 
-``` {r Plot prediction againt observation for inheritance exposure lmers, fig.height = 8, fig.width = 8}
+```{r Plot prediction againt observation for inheritance exposure lmers, fig.height = 8, fig.width = 8}
 
 inheritance_predictions <- predict(inheritance.antigen_model)
 inheritance_and_exposure_predictions <- predict(inheritance_and_exposure_since_birth.antigen_model)
@@ -5728,11 +5831,15 @@ ggplot(inheritance_and_exposure_with_predictions.df,
   geom_smooth(method = "lm") +
   xlab("Observed IgG level") +
   ylab("Predicted IgG level") +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+  ) +
   theme_bw()
 
 ```
 
-``` {r Seroconversion for antigens from LMEM, fig.height = 11, fig.width = 8}
+```{r Seroconversion for antigens from LMEM, fig.height = 11, fig.width = 8}
 
 n_exp = 0:24
 
@@ -5783,7 +5890,7 @@ ggplot(lmem_exposure_summary_plot.df,
 
 ```
 
-``` {r Seroconversion for PclA, fig.height = 8, fig.width = 8}
+```{r Seroconversion for PclA, fig.height = 8, fig.width = 8}
 
 n_exp = 0:24
 
@@ -5823,7 +5930,7 @@ ggplot(pclA_exposure_summary_plot.df,
 
 ```
 
-``` {r Overall summary of exposure, fig.height = 8, fig.width = 8}
+```{r Overall summary of exposure, fig.height = 8, fig.width = 8}
 
 exposure_splines.df <-
   antigen_exposure_response.df %>%
@@ -5897,7 +6004,7 @@ exposure_splines_labels.df <-
 
 # Machine learning prediction of cluster membership from birth
 
-``` {r Functions for SVM analysis}
+```{r Functions for SVM analysis}
 
 make_svm_input <- function(ae.df,age=NULL) {
     dplyr::left_join(
@@ -5970,7 +6077,7 @@ plot_svm_weights <- function(svm,a.df) {
 
 ```
 
-``` {r Prediction with SVM from birth data, eval = FALSE}
+```{r Prediction with SVM from birth data, eval = FALSE}
 
 svm_input <- make_svm_input(antigen_exposure_response.df,age="Birth")
 
@@ -5992,7 +6099,7 @@ save(tune.out,svm_input,svmfit,
 
 ```
 
-``` {r Demonstrate SVM results have no error independent of cost function}
+```{r Demonstrate SVM results have no error independent of cost function}
 
 load("Maela_antigens_svm_data.Rdata")
 
@@ -6002,13 +6109,13 @@ tune.out$performances %>%
 
 ```
 
-``` {r Plot contributions to SVM model, fig.width = 8, fig.height = 8}
+```{r Plot contributions to SVM model, fig.width = 8, fig.height = 8}
 
 plot_svm_weights(svmfit,antigens.df)
 
 ```
 
-``` {r Use cord values for SVM analysis, eval = FALSE}
+```{r Use cord values for SVM analysis, eval = FALSE}
 
 svm_input_cord <- make_svm_input(antigen_exposure_response.df,age="Cord")
 
@@ -6023,7 +6130,7 @@ save(svm_input_cord,svmfit_cord,
 
 ```
 
-``` {r Plot contributions to SVM cord model, fig.width = 8, fig.height = 8}
+```{r Plot contributions to SVM cord model, fig.width = 8, fig.height = 8}
 
 load(file="Maela_antigens_svm_cord_data.Rdata")
 
@@ -6031,7 +6138,7 @@ plot_svm_weights(svmfit_cord,antigens.df)
 
 ```
 
-``` {r Compare weights to absolute IgG responses}
+```{r Compare weights to absolute IgG responses}
 
 antigen_SVM_weights.vec <- apply(svmfit$SV, 2, function(v){sqrt(sum(v^2))})
 
@@ -6067,14 +6174,14 @@ ggplot(compare_weights_responses.df,
 
 ```
 
-``` {r Normalise SVM input data}
+```{r Normalise SVM input data}
 
 normalised_svm_input <- normalise_svm_input(svm_input)
 normalised_svm_input_cord <- normalise_svm_input(svm_input_cord)
 
 ```
 
-``` {r Run SVM on normalised birth data, eval = FALSE}
+```{r Run SVM on normalised birth data, eval = FALSE}
 
 normalised.tune.out<-tune(e1071::svm,
               FinalCluster ~ .,
@@ -6094,7 +6201,7 @@ save(normalised.tune.out,normalised_svm_input,normalised_svmfit,
 
 ```
 
-``` {r Demonstrate normalised SVM results have no error independent of cost function}
+```{r Demonstrate normalised SVM results have no error independent of cost function}
 
 load(file="normalised_Maela_antigens_svm_data.Rdata")
 
@@ -6104,13 +6211,13 @@ normalised.tune.out$performances %>%
 
 ```
 
-``` {r Plot SV weights from normalised birth data, fig.width = 8, fig.height = 8}
+```{r Plot SV weights from normalised birth data, fig.width = 8, fig.height = 8}
 
 plot_svm_weights(normalised_svmfit,antigens.df)
 
 ```
 
-``` {r Run SVM on normalised cord data, eval = FALSE}
+```{r Run SVM on normalised cord data, eval = FALSE}
 
 normalised_svmfit_cord = e1071::svm(FinalCluster ~ .,
              data = normalised_svm_input_cord,
@@ -6133,7 +6240,7 @@ plot_svm_weights(normalised_svmfit_cord,antigens.df)
 
 # ZmpB summary plot
 
-``` {r ZmpB summary plot, fig.width = 8, fig.height = 10}
+```{r ZmpB summary plot, fig.width = 8, fig.height = 10}
 
 antigen_summary.df <-
   antigen_exposure_response.df %>%
@@ -6172,7 +6279,7 @@ ggplot(zmpB_summary.df,
 
 ```
 
-``` {r Compare 6 months to 24 months by type, fig.width = 8, fig.height = 10}
+```{r Compare 6 months to 24 months by type, fig.width = 8, fig.height = 10}
 
 ggplot(zmpB_summary.df,
        aes(x = `6 months`,
@@ -6197,7 +6304,7 @@ ggplot(zmpB_summary.df,
 
 ## Run UMAP analyses
 
-``` {r Test UMAP analysis, fig.height = 11, fig.width = 8}
+```{r Test UMAP analysis, fig.height = 11, fig.width = 8}
 
 library(umap)
 
@@ -6270,8 +6377,7 @@ plot_umap <- function(mat,df,perplexity = 40,match_by=NULL,colour_by=NULL,group_
 
 ```
 
-
-``` {r Variable antigen UMAP, fig.height = 11, fig.width = 8}
+```{r Variable antigen UMAP, fig.height = 11, fig.width = 8}
 
 (single_isolate_variable_antigen_umap <-
   plot_umap(maela_variable_antigen.mat,
@@ -6287,7 +6393,7 @@ plot_umap <- function(mat,df,perplexity = 40,match_by=NULL,colour_by=NULL,group_
 
 ```
 
-``` {r All antigen UMAP, fig.height = 11, fig.width = 8}
+```{r All antigen UMAP, fig.height = 11, fig.width = 8}
 
 (all_antigens <-
   plot_umap(igg.data,
@@ -6316,7 +6422,7 @@ plot_umap <- function(mat,df,perplexity = 40,match_by=NULL,colour_by=NULL,group_
 
 ```
 
-``` {r All individual UMAP, fig.height = 11, fig.width = 8}
+```{r All individual UMAP, fig.height = 11, fig.width = 8}
 
 (all_individuals_umap <-
   plot_umap(t(igg.data),
@@ -6336,7 +6442,7 @@ plot_umap <- function(mat,df,perplexity = 40,match_by=NULL,colour_by=NULL,group_
 
 ```
 
-``` {r All individuals early UMAP, fig.height = 11, fig.width = 8}
+```{r All individuals early UMAP, fig.height = 11, fig.width = 8}
 
 (all_individuals_early <-
   plot_umap(t(early_igg_by_cluster.data),
@@ -6362,7 +6468,7 @@ plot_umap <- function(mat,df,perplexity = 40,match_by=NULL,colour_by=NULL,group_
 
 ```
 
-``` {r All individuals late UMAP, fig.height = 8, fig.width = 8}
+```{r All individuals late UMAP, fig.height = 8, fig.width = 8}
 
 (all_individuals_late <-
   plot_umap(t(late_igg_by_cluster.data),
@@ -6385,9 +6491,10 @@ plot_umap <- function(mat,df,perplexity = 40,match_by=NULL,colour_by=NULL,group_
 )
 
 ```
+
 # Analyse the household data
 
-``` {r Read household data}
+```{r Read household data}
 
 household.df <-
   read.csv(archive::archive_read("household_data.csv.tar.gz")) %>%
@@ -6417,7 +6524,7 @@ if (!("type" %in% colnames(antigen_exposure_response_environment.df))) {
 
 ```
 
-``` {r Plot response by ethnicity, fig.width = 8, fig.height = 11}
+```{r Plot response by ethnicity, fig.width = 8, fig.height = 11}
 
 plot_igg_levels(antigen_exposure_response_environment.df,
                 "mother_ethnic_group",
@@ -6428,7 +6535,7 @@ plot_igg_levels(antigen_exposure_response_environment.df,
 
 ```
 
-``` {r Tabulate differences by ethnicity}
+```{r Tabulate differences by ethnicity}
 
 cluster_by_ethnicity.df <-
   antigen_exposure_response_environment.df %>%
@@ -6441,13 +6548,14 @@ cluster_by_ethnicity.tab %>%
   kableExtra::kable_styling(latex_options = "scale_down")
 
 ```
-``` {r Test for association with ethnicity}
+
+```{r Test for association with ethnicity}
 
 fisher.test(cluster_by_ethnicity.tab,simulate.p.value=TRUE)
 
 ```
 
-``` {r Plot response by smoking, fig.width = 8, fig.height = 11}
+```{r Plot response by smoking, fig.width = 8, fig.height = 11}
 
 plot_igg_levels(antigen_exposure_response_environment.df,
                 "mother_smoke",
@@ -6458,7 +6566,7 @@ plot_igg_levels(antigen_exposure_response_environment.df,
 
 ```
 
-``` {r Tabulate differences by smoking}
+```{r Tabulate differences by smoking}
 
 cluster_by_smoking.df <-
   antigen_exposure_response_environment.df %>%
@@ -6471,13 +6579,14 @@ cluster_by_smoking.tab %>%
   kableExtra::kable_styling(latex_options = "scale_down")
 
 ```
-``` {r Test for association with smoking}
+
+```{r Test for association with smoking}
 
 fisher.test(cluster_by_smoking.tab)
 
 ```
 
-``` {r Plot response by infant sex, fig.width = 8, fig.height = 11}
+```{r Plot response by infant sex, fig.width = 8, fig.height = 11}
 
 plot_igg_levels(antigen_exposure_response_environment.df,
                 "infant_gender",
@@ -6485,7 +6594,8 @@ plot_igg_levels(antigen_exposure_response_environment.df,
                 wrap_len = 15)
 
 ```
-``` {r Tabulate LRTI by sex}
+
+```{r Tabulate LRTI by sex}
 
 lrti_by_sex.df <-
  antigen_exposure_response_environment.df %>%
@@ -6506,7 +6616,7 @@ lrti_by_sex.df %>%
 
 ```
 
-``` {r Tabulate differences by sex}
+```{r Tabulate differences by sex}
 
 cluster_by_sex.df <-
   antigen_exposure_response_environment.df %>%
@@ -6520,13 +6630,13 @@ cluster_by_sex.tab %>%
 
 ```
 
-``` {r Test for association with sex}
+```{r Test for association with sex}
 
 fisher.test(cluster_by_sex.tab)
 
 ```
 
-``` {r Tabulate differences by sex - just infant clusters}
+```{r Tabulate differences by sex - just infant clusters}
 
 cluster_by_sex_just_infant.df <-
   antigen_exposure_response_environment.df %>%
@@ -6544,13 +6654,14 @@ cluster_by_sex_just_infant.tab %>%
   kableExtra::kable_styling(latex_options = "scale_down")
 
 ```
-``` {r Test for association with sex - just infant clusters}
+
+```{r Test for association with sex - just infant clusters}
 
 fisher.test(cluster_by_sex_just_infant.tab)
 
 ```
 
-``` {r Plot response by delivery type, fig.width = 8, fig.height = 11}
+```{r Plot response by delivery type, fig.width = 8, fig.height = 11}
 
 plot_igg_levels(antigen_exposure_response_environment.df,
                 "type_delivery",
@@ -6559,7 +6670,7 @@ plot_igg_levels(antigen_exposure_response_environment.df,
 
 ```
 
-``` {r Plot response by heat source, fig.width = 8, fig.height = 11}
+```{r Plot response by heat source, fig.width = 8, fig.height = 11}
 
 plot_igg_levels(antigen_exposure_response_environment.df,
                 "house_fire",
@@ -6570,7 +6681,7 @@ plot_igg_levels(antigen_exposure_response_environment.df,
 
 ```
 
-``` {r Plot response by heat source fuel, fig.width = 8, fig.height = 11}
+```{r Plot response by heat source fuel, fig.width = 8, fig.height = 11}
 
 plot_igg_levels(antigen_exposure_response_environment.df,
                 "house_fuel",
@@ -6581,7 +6692,7 @@ plot_igg_levels(antigen_exposure_response_environment.df,
 
 ```
 
-``` {r Tabulate differences by fuel}
+```{r Tabulate differences by fuel}
 
 cluster_by_fuel.df <-
   antigen_exposure_response_environment.df %>%
@@ -6596,7 +6707,7 @@ table(cluster_by_fuel.df$cluster,cluster_by_fuel.df$house_fuel) %>%
 
 # SIMLR validation
 
-``` {r Quick SIMLR test}
+```{r Quick SIMLR test}
 
 test.igg <-
   matrix((c(0.93,1.02,0.94,1.04,1.02,0.94,0.93,1.02,0.94,1.04,1.02,0.94,
@@ -6807,7 +6918,7 @@ rownames(probe.igg.data) <-
     dplyr::pull()
 ```
 
-``` {r Plot responses to ZmpB using generic Zmp functions, fig.height = 11, fig.width = 8}
+```{r Plot responses to ZmpB using generic Zmp functions, fig.height = 11, fig.width = 8}
 
 # Convert into ZmpB data frame
 get_zmp_df <- function(df,search_term) {
@@ -6875,7 +6986,7 @@ plot_zmp_df(zmpB_igg.df)
 
 ```
 
-``` {r Compare with ZmpA, fig.height = 11, fig.width = 8}
+```{r Compare with ZmpA, fig.height = 11, fig.width = 8}
 
 zmpA_igg.df <-
   get_zmp_df(probe.igg.data,"mpA")
@@ -6884,7 +6995,7 @@ plot_zmp_df(zmpA_igg.df)
 
 ```
 
-``` {r Compare with ZmpC, fig.height = 11, fig.width = 8}
+```{r Compare with ZmpC, fig.height = 11, fig.width = 8}
 
 zmpC_igg.df <-
   get_zmp_df(probe.igg.data,"CLS01991")
@@ -6893,7 +7004,7 @@ plot_zmp_df(zmpC_igg.df)
 
 ```
 
-``` {r Compare with ZmpD, fig.height = 11, fig.width = 8}
+```{r Compare with ZmpD, fig.height = 11, fig.width = 8}
 
 zmpD_igg.df <-
   get_zmp_df(probe.igg.data,"CLS02608")
@@ -6902,8 +7013,7 @@ plot_zmp_df(zmpD_igg.df)
 
 ```
 
-
-``` {r What is the location of the IgG interaction domain, fig.width = 8, fig.height = 8}
+```{r What is the location of the IgG interaction domain, fig.width = 8, fig.height = 8}
 
 #Batch CD-search tool   NIH/NLM/NCBI
 #cdsid  QM3-qcdsearch-1A38FB116054B78-DC4668AD6CC8A34
@@ -6983,7 +7093,7 @@ ggplot(cdd_summary.df,
 
 ```
 
-``` {r Plot response by domain, fig.width = 8, fig.height = 8}
+```{r Plot response by domain, fig.width = 8, fig.height = 8}
 
 responses_to_domains.df <-
   cdd.df %>%
@@ -7035,7 +7145,7 @@ cowplot::plot_grid(
                       pspc_related_plot + theme(legend.position = "none"),
                       pspc_s1_plot + theme(legend.position = "none"),
                       pspc_s2_plot + theme(legend.position = "none")),
-      labels = "AUTO"
+      labels = "auto"
     ),
     cowplot::get_legend(peptidase_plot + guides(colour = guide_legend(title = "Domain",
                                                                       direction = "horizontal"),
@@ -7048,7 +7158,8 @@ cowplot::plot_grid(
 )
 
 ```
-``` {r Summary plot of probe levels, fig.width = 8, fig.height = 10}
+
+```{r Summary plot of probe levels, fig.width = 8, fig.height = 10}
 
 dodge_width = 0.75
 
@@ -7101,7 +7212,8 @@ annotated_responses_to_domains.df <-
 )
 
 ```
-``` {r Compare ZmpB probes to maximum response, fig.width = 8}
+
+```{r Compare ZmpB probes to maximum response, fig.width = 8}
 
 zmpB_max.df <-
   annotated_responses_to_domains.df %>%
@@ -7134,7 +7246,7 @@ zmpB_max.df <-
 
 ```
 
-``` {r Probe correlations over time, fig.width = 8, fig.height = 10}
+```{r Probe correlations over time, fig.width = 8, fig.height = 10}
 
 get_probe_correlation <- function(test.df) {
   test.df %>%
@@ -7215,15 +7327,14 @@ cowplot::plot_grid(
   ),
   nrow = 2,
   rel_heights = c(0.5,0.4),
-  labels = "AUTO"
+  labels = "auto"
 )
 
 ```
 
-
 ## Does the early response represent the time of first exposure?
 
-``` {r Get time of first exposure}
+```{r Get time of first exposure}
 
 time_of_first_exposure.df <-
   antigen_exposure_response.df %>%
@@ -7261,7 +7372,7 @@ time_of_first_exposure.df <-
 
 ## Assemble Figure 1
 
-``` {r Assemble multipanel Figure 1, fig.width = 8, fig.height = 12}
+```{r Assemble multipanel Figure 1, fig.width = 8, fig.height = 12}
 
 cowplot::plot_grid(
   plotlist = list(
@@ -7275,7 +7386,7 @@ cowplot::plot_grid(
       nrow = 2,
       ncol = 2,
       rel_heights = c(0.6,0.4),
-      labels = "AUTO"
+      labels = "auto"
     ),
     cowplot::get_legend(all_individuals_early_by_cluster)
     ),
@@ -7284,7 +7395,8 @@ cowplot::plot_grid(
 )
 
 ```
-``` {r Assemble multipanel Figure 3, fig.width = 8, fig.height = 8}
+
+```{r Assemble multipanel Figure 3, fig.width = 8, fig.height = 8}
 
 
 cowplot::plot_grid(
@@ -7295,7 +7407,7 @@ cowplot::plot_grid(
         late_sample_correlations_plot + theme(legend.position = "none")
       ),
       ncol = 2,
-      labels = "AUTO",
+      labels = "auto",
       rel_widths = c(0.55,0.45)
     ),
     cowplot::get_legend(early_sample_correlations_plot +
@@ -7306,9 +7418,13 @@ cowplot::plot_grid(
   rel_heights = c(0.925,0.075)
 )
 
+ggsave("Figure_4.pdf",
+       width = 8,
+       height = 8)
+
 ```
 
-``` {r Assemble multipanel Figure 5, fig.width = 8, fig.height = 11}
+```{r Assemble multipanel Figure 5, fig.width = 8, fig.height = 11}
 
 
 cowplot::plot_grid(
@@ -7317,7 +7433,7 @@ cowplot::plot_grid(
     response_by_exposures_plot
   ),
   nrow = 2,
-  labels = "AUTO",
+  labels = "auto",
   rel_heights = c(0.5,0.55)
 )
 
@@ -7325,7 +7441,7 @@ cowplot::plot_grid(
 
 ## What are the slowest developing responses?
 
-``` {r Compare maternal and 24 mo responses, fig.width = 8}
+```{r Compare maternal and 24 mo responses, fig.width = 8}
 
 first_and_last.df <-
   antigen_exposure_response.df %>%
@@ -7387,6 +7503,10 @@ first_and_last_outliers.df <-
                              nudge_x = 1,
                              force_pull = 0.1
                               ) +
+    stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+    ) +
     theme_bw()
 )
 
@@ -7394,7 +7514,7 @@ first_and_last_outliers.df <-
 
 ## Any effect of IgG on colonisation?
 
-``` {r Compare with colonisation frequency, fig.width = 8}
+```{r Compare with colonisation frequency, fig.width = 8}
 
 healthy_colonisation.df <-
   sampling.df %>%
@@ -7425,7 +7545,7 @@ healthy_colonisation.df <-
 
 ```
 
-``` {r Compare IgG with colonisation frequency, fig.width = 8, fig.height = 11}
+```{r Compare IgG with colonisation frequency, fig.width = 8, fig.height = 11}
 
 antigen_exposure_response_colonisation.df <-
   antigen_exposure_response.df %>%
@@ -7460,7 +7580,7 @@ plot_igg_levels(antigen_exposure_response_colonisation.df,
 
 ## Effects of colonisation level on clustering
 
-``` {r Effects of early colonisation on clustering, fig.height = 11.5, fig.width = 9}
+```{r Effects of early colonisation on clustering, fig.height = 11.5, fig.width = 9}
 
 early_colonisation_late_clustering.df <-
   antigen_exposure_response_colonisation.df %>%
@@ -7502,7 +7622,7 @@ cowplot::plot_grid(
     colonisation_frequency_categorisation_plot,
     early_colonisation_late_clustering
   ),
-  labels = "AUTO",
+  labels = "auto",
   nrow = 3,
   ncol = 1,
   rel_heights = c(0.3,0.3,0.4)
@@ -7512,7 +7632,7 @@ cowplot::plot_grid(
 
 ## Assemble Figure 2
 
-``` {r Assemble multipanel Figure 2, fig.width = 8, fig.height = 11}
+```{r Assemble multipanel Figure 2, fig.width = 8, fig.height = 11}
 
 cowplot::plot_grid(
   plotlist = list(
@@ -7546,7 +7666,7 @@ cowplot::plot_grid(
 
 ## Table S1
 
-``` {r Build Table S1}
+```{r Build Table S1}
 
 epi_summary.df <-
   antigen_exposure_response_environment.df %>%
@@ -7604,7 +7724,7 @@ table_s1.df %>%
 
 ```
 
-``` {r Build Table S6}
+```{r Build Table S6}
 
 (table_s6.df <-
   epi_summary.df %>%
@@ -7631,7 +7751,7 @@ table_s6.df %>%
 
 ```
 
-``` {r Plot responses acquired later by cluster}
+```{r Plot responses acquired later by cluster}
 
 
 acquired_responses.df <-
@@ -7657,7 +7777,7 @@ ggplot(acquired_responses.df,
 
 ## Use modelling to test for protective effects of antibodies
 
-``` {r Modelling for protective effects, fig.height = 8, fig.width = 8}
+```{r Modelling for protective effects, fig.height = 8, fig.width = 8}
 
 colonisation_by_sero_code.df <-
   antigen_exposure_response_colonisation.df %>%
@@ -7738,7 +7858,7 @@ ggplot(antigen_response_protection_model_comparisons.df,
 
 Then extract the parameter estimates:
 
-``` {r Extract the parameter estimates from protection models, fig.width = 8}
+```{r Extract the parameter estimates from protection models, fig.width = 8}
 
 antigen_response_combined_exposure_model_outputs <- combine_exposure_model_outputs(inheritance.protection.antigen_model, inheritance_and_exposure_since_birth.protection.antigen_model)
 antigen_response_protection_analysis.df <- antigen_response_combined_exposure_model_outputs[[1]]
@@ -7798,7 +7918,7 @@ exposure_protection_outlier_labels.df <-
 
 ```
 
-``` {r Fit equivalent models for differing pneumonia severities}
+```{r Fit equivalent models for differing pneumonia severities}
 
 inheritance.severe_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
@@ -7832,7 +7952,7 @@ inheritance.colonisation_protection.antigen_model <-
 
 ```
 
-``` {r Plot change in protection by age}
+```{r Plot change in protection by age}
 
 library(multcomp)
 
@@ -7932,7 +8052,8 @@ dodge_width = 0.2
 )
 
 ```
-``` {r Model effects of maternal antibodies, fig.width = 8}
+
+```{r Model effects of maternal antibodies, fig.width = 8}
 
 early_diagnosis.df <-
   antigen_exposure_response.df %>%
@@ -8024,7 +8145,7 @@ ggplot(maternal_protection.df,
 
 ```
 
-``` {r Plot prediction againt observation for inheritance exposure and disease lmers, fig.height = 8, fig.width = 8}
+```{r Plot prediction againt observation for inheritance exposure and disease lmers, fig.height = 8, fig.width = 8}
 
 inheritance_pneumonia_predictions <- 
   predict(inheritance.protection.antigen_model)
@@ -8066,10 +8187,15 @@ ggplot(inheritance_and_exposure_pneumonia_with_predictions.df,
   geom_smooth(method = "lm") +
   xlab("Observed IgG level") +
   ylab("Predicted IgG level") +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+  ) +
   theme_bw()
 
 ```
-``` {r Plot against birth weight, fig.height = 8, fig.width = 8}
+
+```{r Plot against birth weight, fig.height = 8, fig.width = 8}
 
 linked.df <-
   antigen_response_individuals_model_comparisons.df %>%
@@ -8086,6 +8212,10 @@ cowplot::plot_grid(
     geom_smooth(method = "lm") +
     ylab("Individual random effect in\nuniversal exposure model") +
     xlab("Infant birth weight (g)") +
+    stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+    ) +
     theme_bw(),
     ggplot(linked.df,
          aes(x = infant_bw,
@@ -8095,15 +8225,19 @@ cowplot::plot_grid(
     geom_smooth(method = "lm") +
     ylab("Individual random effect in\npartial exposure model") +
     xlab("Infant birth weight (g)") +
+    stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+    ) +
     theme_bw()
   ),
   nrow = 2,
-  labels ="AUTO"
+  labels ="auto"
 )
 
 ```
 
-``` {r Write out data file}
+```{r Write out data file}
 
 save(antigen_exposure_response_environment.df,
      file="Maela_panproteome_array_data.Rdata")
@@ -8125,7 +8259,7 @@ write.csv(antigen_exposure_response_environment.df %>%
 
 ```
 
-``` {r Make accession codes table}
+```{r Make accession codes table}
 
 write.csv(antigen_exposure_response_environment.df %>%
            dplyr::select(sero_specnum,sero_age,codenum,accessionsSinceLastSample) %>%
@@ -8148,7 +8282,7 @@ write.csv(antigen_exposure_response_environment.df %>%
 
 ## Compare with anti-capsular IgG
 
-``` {r Compare with cps IgG}
+```{r Compare with cps IgG}
 
 cps_igg.df <-
   antigen_exposure_response_environment.df %>%
@@ -8183,6 +8317,3 @@ ggplot(cps_igg.df %>% dplyr::filter(cluster %in% c("Infant high","Infant low")),
         legend.position = "bottom")
 
 ```
-
-
-
