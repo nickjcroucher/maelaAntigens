@@ -8516,3 +8516,16 @@ ggplot(elisa.df,
 ```
 
 
+# Plot serotype distribution
+
+``` {r Plot serotype distribution, fig.height = 7, fig.width = 8}
+
+serotype.df <-
+  lane.df %>%
+    dplyr::select(lane,InferredSerotype,lane_type,InferredGPSC) %>%
+    dplyr::rename(allele = InferredSerotype) %>%
+    dplyr::mutate(lane_type = dplyr::if_else(lane_type == "single_isolate","Single isolate","Deep sequencing"))
+
+plot_antigen_distribution(serotype.df)
+
+```
