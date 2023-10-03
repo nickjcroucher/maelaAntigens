@@ -4393,7 +4393,7 @@ clustering_model_comparison.df %>%
 
 ```{r Plot coefficients with clustering}
 
-sjPlot::tab_model(igg.int_clustering_model_3)
+sjPlot::tab_model(igg.int_clustering_model_4)
 
 ```
 
@@ -8282,6 +8282,35 @@ write.csv(antigen_exposure_response_environment.df %>%
 
 ## Compare with anti-capsular IgG
 
+``` {r Kinetics of cps responses}
+
+cps_raw.df <-
+  read.csv(archive::archive_read("cps_IgG.csv.tar.gz"),
+           header = T) %>%
+        dplyr::rename(sero_specnum = Specimen.Number) %>%
+  dplyr::group_by(Study.code) %>%
+  dplyr::mutate(Age = row_number()) %>%
+  dplyr::ungroup() %>%
+  tidyr::pivot_longer(dplyr::starts_with("Serotype_"),
+                      names_to = "Serotype",
+                      values_to = "igg") %>%
+  dplyr::mutate(Serotype = gsub("Serotype_","",Serotype))
+
+ggplot(cps_raw.df,
+       aes(x = Age,
+           y = igg,
+           group = Study.code)) +
+  geom_line() +
+  scale_y_continuous(trans = "log10") +
+  facet_wrap(.~Serotype) +
+  xlab("Age (months)") +
+  ylab(expression('Geometric mean IgG titre (mg L'^{-1}*')')) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        legend.position = "bottom")
+
+```
+
 ```{r Compare with cps IgG}
 
 cps_igg.df <-
@@ -8289,16 +8318,10 @@ cps_igg.df <-
     dplyr::select(sero_specnum,codenum,cluster,sero_age) %>%
     dplyr::distinct() %>%
     dplyr::inner_join(
-      read.csv(archive::archive_read("cps_IgG.csv.tar.gz"),
-           header = T) %>%
-        dplyr::select(-Study.code) %>%
-        dplyr::rename(sero_specnum = Specimen.Number),
+      cps_raw.df %>%
+        dplyr::select(-c(Study.code,Age)),
       by = c("sero_specnum")
-    ) %>%
-  tidyr::pivot_longer(dplyr::starts_with("Serotype_"),
-                      names_to = "Serotype",
-                      values_to = "igg") %>%
-  dplyr::mutate(Serotype = gsub("Serotype_","",Serotype))
+    )
 
 ggplot(cps_igg.df %>% dplyr::filter(cluster %in% c("Infant high","Infant low")),
        aes(x = sero_age,
@@ -8317,3 +8340,179 @@ ggplot(cps_igg.df %>% dplyr::filter(cluster %in% c("Infant high","Infant low")),
         legend.position = "bottom")
 
 ```
+
+# Multivariate environmental model
+
+``` {r Multivariate environmental model}
+
+me_env.df <-
+  mef_input_with_clustering.df %>%
+    dplyr::left_join(antigen_exposure_response_environment.df %>%
+                       dplyr::select(codenum,
+                                     sero_age,
+                                     mother_ethnic_group,
+                                     mother_smoke,
+                                     infant_gender,
+                                     infant_bw,
+                                     house_fuel) %>%
+                       dplyr::distinct(),
+                     by = c("codenum","sero_age"))
+
+igg.int_clustering_model_4_rerun <-
+  lmer(igg ~ sero_age*type*cluster + (1|codenum) + 0,
+       data = me_env.df,
+       REML = FALSE)
+
+igg.with_ethnicity <-
+  lmer(igg ~ sero_age*type*cluster + (1|codenum) + mother_ethnic_group + 0,
+       data = me_env.df,
+       REML = FALSE)
+
+igg.with_smoking <-
+  lmer(igg ~ sero_age*type*cluster + (1|codenum) + mother_smoke + 0,
+       data = me_env.df,
+       REML = FALSE)
+
+igg.with_sex <-
+  lmer(igg ~ sero_age*type*cluster + (1|codenum) + infant_gender + 0,
+       data = me_env.df,
+       REML = FALSE)
+
+igg.with_bw <-
+  lmer(igg ~ sero_age*type*cluster + (1|codenum) + infant_bw + 0,
+       data = me_env.df,
+       REML = FALSE)
+
+igg.with_fuel <-
+  lmer(igg ~ sero_age*type*cluster + (1|codenum) + house_fuel + 0,
+       data = me_env.df,
+       REML = FALSE)
+
+igg.with_all_env <-
+  lmer(igg ~ sero_age*type*cluster + (1|codenum) + mother_ethnic_group + mother_smoke + infant_gender + infant_bw  + house_fuel + 0,
+       data = me_env.df,
+       REML = FALSE)
+
+
+env_model_list <- c(igg.int_clustering_model_4_rerun,
+                    igg.with_ethnicity,
+                    igg.with_smoking,
+                    igg.with_sex,
+                    igg.with_bw,
+                    igg.with_fuel,
+                    igg.with_all_env)
+
+env_model_comparison.df <-
+  pairwise_model_comparisons(env_model_list)
+
+ggplot(env_model_comparison.df,
+       aes(x = i,
+           y = j,
+           colour = delta_aic,
+           fill = delta_aic)) +
+  geom_tile() +
+  scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
+  xlab("Reference model index") +
+  ylab("Comparison model index") +
+  theme_bw() +
+  guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
+         fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+
+```
+
+```{r Tabulate env model comparisons}
+
+env_model_comparison.df %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_styling(latex_options = "scale_down")
+
+```
+
+# Correlation with protein ELISA
+
+``` {r Correlation with ELISA, fig.height = 8, fig.width = 8}
+
+elisa.df <- 
+  read.csv(archive::archive_read("protein_elisa_data.csv.tar.gz")) %>%
+    dplyr::select(codenum,
+                  sero_specnum,
+                  dplyr::starts_with("PP")) %>%
+    tidyr::pivot_longer(dplyr::starts_with("PP"), names_to = "Elisa_protein", values_to = "Elisa_value") %>%
+    dplyr::left_join(
+      read.csv(archive::archive_read("protein_elisa_names.csv.tar.gz")) %>%
+        dplyr::rename(antigen = Array_protein),
+      by = c("Elisa_protein")
+    ) %>%
+    dplyr::inner_join(
+      antigen_exposure_response.df %>%
+        dplyr::select(sero_specnum,sero_age,cluster,antigen,gene,igg),
+      by = c("sero_specnum","antigen")
+    ) %>%
+  dplyr::mutate(antigen = factor(antigen))
+
+ggplot(elisa.df,
+       aes(
+        x = Elisa_value,
+        y = igg)
+      ) +
+  geom_point() +
+  scale_x_continuous(trans = "log10") +
+  geom_smooth(method = "lm") +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n'
+  ) +
+  xlab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
+  ylab("Normalised array IgG measurement") +
+  facet_wrap(~antigen) +
+  theme_bw() +
+  theme(strip.background = element_blank())
+
+```
+
+``` {r Plot ELISA data by cluster, fig.height = 11, fig.width = 8}
+
+elisa_cluster_test.df <-
+  elisa.df %>%
+    dplyr::group_by(antigen,sero_age) %>%
+        rstatix::wilcox_test(Elisa_value ~ cluster,
+                             ref.group = "Infant high",
+                             paired = FALSE,
+                             p.adjust.method = "holm") %>%
+        dplyr::ungroup() %>%
+        rstatix::add_xy_position(x = "cluster", dodge = 1, scales = "free_y") %>%
+        dplyr::filter(p.adj.signif != "ns")
+
+ggplot(elisa.df,
+       aes(x = cluster,
+           y = Elisa_value,
+           colour = cluster,
+           fill = cluster)) +
+  geom_point(size = 0.025, alpha = 0.5, position = position_jitter()) +
+  geom_violin(draw_quantiles = c(0.5), alpha = 0.25, linewidth = 0.1) +
+  scale_y_continuous(trans = "log10",
+                     expand = expansion(mult = c(0, 0.35), 
+                                         add = c(0, 0))
+                     ) + #, limits = c(10,75000)) +
+  scale_colour_manual(values = cluster_palette,
+                      aesthetics = c("fill","colour"),
+                      drop = TRUE, limits = force,
+                      name = "Immune cluster") +
+  facet_grid(antigen~sero_age, scales = 'free_y') +
+  theme_bw() +
+  xlab("") +
+  ylab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
+  theme(strip.background = element_blank(), strip.text.y = element_text(angle = 0),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
+        axis.text.y = element_text(size = 8),
+        legend.position = "bottom") +
+  ggpubr::stat_pvalue_manual(elisa_cluster_test.df %>% 
+                               dplyr::mutate(y.position = log(1.5*y.position,10)),
+                              xmin = "group1", xmax = "group2", #y.position = "y.position",xmin="group1",xmax = "group2",
+                              label = "p.adj.signif",
+                              tip.length = 0,
+                              inherit.aes = FALSE)
+
+```
+
+
