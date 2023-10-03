@@ -1356,7 +1356,8 @@ plot_antigen_distribution <- function(df) {
            y=allele,
            fill=Frequency)) +
   geom_tile() +
-  scale_fill_distiller(palette = "Spectral") +
+  #scale_fill_distiller(palette = "YlOrRd", direction="horizontal") +
+  scale_fill_viridis(option = "D", direction=-1) +
   ylab("Antigen allele") +
   xlab("GPSC") +
   theme_bw() +
@@ -8526,6 +8527,7 @@ serotype.df <-
     dplyr::rename(allele = InferredSerotype) %>%
     dplyr::mutate(lane_type = dplyr::if_else(lane_type == "single_isolate","Single isolate","Deep sequencing"))
 
-plot_antigen_distribution(serotype.df)
+plot_antigen_distribution(serotype.df) +
+  ylab("Serotype")
 
 ```
