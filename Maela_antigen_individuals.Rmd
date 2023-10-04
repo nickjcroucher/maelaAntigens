@@ -8342,22 +8342,23 @@ cps_raw.df <-
                       values_to = "igg") %>%
   dplyr::mutate(Serotype = gsub("Serotype_","",Serotype))
 
-ggplot(cps_raw.df,
-       aes(x = Age,
-           y = igg,
-           group = Study.code)) +
-  geom_line() +
-  scale_y_continuous(trans = "log10") +
-  facet_wrap(.~Serotype) +
-  xlab("Age (months)") +
-  ylab(expression('Geometric mean IgG titre (mg L'^{-1}*')')) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-        legend.position = "bottom")
+cps_kinetics_plot <-
+  ggplot(cps_raw.df,
+         aes(x = Age,
+             y = igg,
+             group = Study.code)) +
+    geom_line() +
+    scale_y_continuous(trans = "log10") +
+    facet_wrap(.~Serotype) +
+    xlab("Age (months)") +
+    ylab(expression('IgG titre (mg L'^{-1}*')')) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          legend.position = "bottom")
 
 ```
 
-```{r Compare with cps IgG}
+```{r Compare with cps IgG, fig.height = 10, fig.width = 8}
 
 cps_igg.df <-
   antigen_exposure_response_environment.df %>%
@@ -8369,21 +8370,37 @@ cps_igg.df <-
       by = c("sero_specnum")
     )
 
-ggplot(cps_igg.df %>% dplyr::filter(cluster %in% c("Infant high","Infant low")),
-       aes(x = sero_age,
-           y = igg,
-           colour = cluster,
-           fill = cluster)) +
-  geom_violin(draw_quantiles = c(0.5), alpha = 0.25, scale = "width", width = 0.5, position = position_dodge(width = 0.5)) +
-  geom_point(position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.25)) +
-  scale_y_continuous(trans = "log10") +
-  facet_wrap(.~Serotype) +
-  scale_colour_manual(values = cluster_palette, aesthetics = c("fill","colour")) +
-  xlab("Age") +
-  ylab(expression('Geometric mean IgG titre (mg L'^{-1}*')')) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-        legend.position = "bottom")
+cps_clustering_plot <-
+  ggplot(cps_igg.df %>% dplyr::filter(cluster %in% c("Infant high","Infant low")),
+         aes(x = sero_age,
+             y = igg,
+             colour = cluster,
+             fill = cluster)) +
+    geom_violin(draw_quantiles = c(0.5), alpha = 0.25, scale = "width", width = 0.5, position = position_dodge(width = 0.5)) +
+    geom_point(position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.25)) +
+    scale_y_continuous(trans = "log10") +
+    facet_wrap(.~Serotype) +
+    scale_colour_manual(values = cluster_palette,
+                      aesthetics = c("fill","colour"),
+                      drop = TRUE, limits = force,
+                      name = "Immune cluster") +
+    xlab("Age") +
+    ylab(expression('IgG titre (mg L'^{-1}*')')) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          legend.position = "bottom")
+
+(cps_response_plot <-
+  cowplot::plot_grid(
+    plotlist = list(
+      cps_kinetics_plot,
+      cps_clustering_plot
+    ),
+    labels = "auto",
+    nrow = 2,
+    rel_heights = c(1,1.2)
+  )
+)
 
 ```
 
@@ -8487,7 +8504,7 @@ elisa.df <-
     dplyr::left_join(
       read.csv(archive::archive_read("protein_elisa_names.csv.tar.gz")) %>%
         dplyr::rename(antigen = Array_protein) %>%
-        dplyr::mutate(Label = paste0(Label,"\n(",antigen,")")),
+        dplyr::mutate(Label = paste0(Label,"\n",Provider,"\n(",antigen,")")),
       by = c("Elisa_protein")
     ) %>%
     dplyr::inner_join(
