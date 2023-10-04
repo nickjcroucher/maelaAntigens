@@ -9013,8 +9013,8 @@ protection_estimates_by_age.df <-
       dplyr::mutate(Model = "Partial exposure") %>%
       dplyr::mutate(Diagnosis = "Frequent colonisation") %>%
       dplyr::mutate(Timepoint = "Pre-diagnosis IgG level")
-    
-  )
+  ) %>%
+  dplyr::mutate(Timepoint = factor(Timepoint, levels = c("Pre-diagnosis IgG level","Post-diagnosis IgG level")))
 
 dodge_width = 0.2
 
