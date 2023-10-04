@@ -27,6 +27,12 @@ library(ggpubr)
 library(corrr)
 library(cowplot)
 library(archive)
+library(viridis)
+library(multcomp)
+library(lme4)
+library(sjPlot)
+library(moments)
+library(umap)
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
@@ -458,7 +464,7 @@ translation.df <-
                               )
                     ) %>%
       dplyr::arrange(codenum,category,specdate) %>%
-      dplyr::group_by(codenum) %>%
+      dplyr::group_by(codenum,category) %>%
       dplyr::mutate(previous_specdate = dplyr::lag(specdate, n = 1L)) %>%
       dplyr::mutate(first_specdate = min(specdate)) %>%
       dplyr::ungroup()
@@ -2459,8 +2465,6 @@ cowplot::plot_grid(
 
 ```{r Test for skewness}
 
-library(moments)
-
 get_stats <- function(protein, antigen_df = antigens.df) {
   values <- antigen_df %>% dplyr::filter(antigen == protein) %>% dplyr::select(igg) %>% dplyr::pull()
   return(
@@ -2552,8 +2556,8 @@ early_igg_by_cluster.data <-
 ```{r Plot t-SNE across individuals at six months by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
 
 
-antigens.df %<>%
-  dplyr::left_join(clustering_plot.df %>% dplyr::select(sero_specnum,cluster))
+# antigens.df %<>%
+#   dplyr::left_join(clustering_plot.df %>% dplyr::select(sero_specnum,cluster))
 
 mid_igg.data <-
   igg.data[,colnames(igg.data) %in% antigens.df$sero_specnum[antigens.df$sero_age %in% c("6 months","12 months","18 months","24 months")]]
@@ -2794,28 +2798,44 @@ genomic_immunology.df <-
     dplyr::select(-c(age.d,age.v,pnc,serotype,sequence_type,GPSC,sangernum,GenomicData)) %>%
     dplyr::mutate(InferredSerotype = dplyr::if_else(InferredSerotype=="None",NA_character_,InferredSerotype)) %>%
     dplyr::mutate(InferredGPSC = dplyr::if_else(InferredGPSC=="None",NA_character_,InferredGPSC)) %>%
+    dplyr::mutate(previous_sero_specnum = sero_specnum) %>%
     dplyr::group_by(codenum,category) %>%
     tidyr::fill(c(sero_specnum,sero_age,previous_specdate,first_specdate,Slide.ID),.direction = "updown") %>%
+    tidyr::fill(previous_sero_specnum,.direction = "down") %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(sero_specnum) %>%
+    tidyr::fill(previous_sero_specnum,.direction = "up") %>%
     dplyr::ungroup() %>%
     # Record cases of disease - after sample
-    dplyr::group_by(sero_specnum,category) %>%
-    dplyr::mutate(LRTI_since_last_sample = sum(diagnosis_clinical %in% c("Pneumonia","Severe pneumonia","Very severe pneumonia"))) %>%
-    dplyr::mutate(severe_LRTI_since_last_sample = sum(diagnosis_clinical %in% c("Severe pneumonia","Very severe pneumonia"))) %>%
-    dplyr::mutate(very_severe_LRTI_since_last_sample = sum(diagnosis_clinical %in% c("Very severe pneumonia"))) %>%
+    dplyr::group_by(sero_specnum,category) %>% # below needs to be n_distinct specnum
+    dplyr::mutate(LRTI_since_last_sample = 
+                      dplyr::n_distinct(specnum[diagnosis_clinical %in% c("Pneumonia","Severe pneumonia","Very severe pneumonia")])
+                  ) %>%
+    dplyr::mutate(severe_LRTI_since_last_sample = 
+                    dplyr::n_distinct(specnum[diagnosis_clinical %in% c("Severe pneumonia","Very severe pneumonia")])
+                  ) %>%
+    dplyr::mutate(very_severe_LRTI_since_last_sample = 
+                    dplyr::n_distinct(specnum[diagnosis_clinical %in% c("Very severe pneumonia")])
+                  ) %>%
     dplyr::ungroup() %>%
     # Record cases of disease - before sample
-    dplyr::group_by(codenum,category) %>%
-    dplyr::mutate(previous_specnum = dplyr::lag(sero_specnum,n = 1L)) %>%
+    dplyr::group_by(previous_sero_specnum,category) %>%
+    dplyr::mutate(LRTI_before_next_sample = 
+                      dplyr::n_distinct(specnum[diagnosis_clinical %in% c("Pneumonia","Severe pneumonia","Very severe pneumonia")])
+                  ) %>%
+    dplyr::mutate(severe_LRTI_before_next_sample = 
+                    dplyr::n_distinct(specnum[diagnosis_clinical %in% c("Severe pneumonia","Very severe pneumonia")])
+                  ) %>%
+    dplyr::mutate(very_severe_LRTI_before_next_sample = 
+                    dplyr::n_distinct(specnum[diagnosis_clinical %in% c("Very severe pneumonia")])
+                  ) %>%
     dplyr::ungroup() %>%
-    dplyr::group_by(previous_specnum,category) %>%
-    dplyr::mutate(LRTI_before_next_sample = sum(diagnosis_clinical %in% c("Pneumonia","Severe pneumonia","Very severe pneumonia"))) %>%
-    dplyr::mutate(severe_LRTI_before_next_sample = sum(diagnosis_clinical %in% c("Severe pneumonia","Very severe pneumonia"))) %>%
-    dplyr::mutate(very_severe_LRTI_before_next_sample = sum(diagnosis_clinical %in% c("Very severe pneumonia"))) %>%
+    dplyr::group_by(sero_specnum,category) %>%
+    dplyr::mutate(across(c(LRTI_before_next_sample,severe_LRTI_before_next_sample,very_severe_LRTI_before_next_sample), last)) %>%
     dplyr::ungroup() %>%
     dplyr::select(-c(diagnosis_clinical,Xray_diagnosis,specnum)) %>%
     # Summarise data relevant to each IgG analysis
     dplyr::group_by(sero_specnum,
-                    previous_specnum,
                     codenum,
                     category,
                     sero_age,
@@ -2836,7 +2856,6 @@ genomic_immunology.df <-
                      accessions = list(SingleIsolateAccession,DeepSeqAccession,RepresentativeAccession)) %>%
     dplyr::ungroup() %>%
     dplyr::group_by(sero_specnum,
-                    previous_specnum,
                     codenum,
                     category,
                     sero_age,
@@ -3042,7 +3061,6 @@ antigen_exposure_response.df <-
                       category,
                       sero_age,
                       dob,
-                      previous_specnum,
                       previous_specdate,
                       first_specdate,
                       Slide.ID,
@@ -3088,14 +3106,14 @@ antigen_exposure_response.df <-
                                                           "VerySevereLRTISinceLastSample")
     ) %>%
     dplyr::mutate(AnyLRTIBeforeNextSample = dplyr::if_else(LRTI_before_next_sample==0,
-                                                          "NoLRTISinceLastSample",
-                                                          "LRTISinceLastSample")) %>%
+                                                          "NoLRTIBeforeNextSample",
+                                                          "LRTIBeforeNextSample")) %>%
     dplyr::mutate(AnySevereLRTIBeforeNextSample = dplyr::if_else(severe_LRTI_before_next_sample==0,
-                                                          "NoSevereLRTISinceLastSample",
-                                                          "SevereLRTISinceLastSample")) %>%
+                                                          "NoSevereLRTIBeforeNextSample",
+                                                          "SevereLRTIBeforeNextSample")) %>%
     dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = dplyr::if_else(very_severe_LRTI_before_next_sample==0,
-                                                          "NoVerySevereLRTISinceLastSample",
-                                                          "VerySevereLRTISinceLastSample")
+                                                          "NoVerySevereLRTIBeforeNextSample",
+                                                          "VerySevereLRTIBeforeNextSample")
     )
 
 n_antigens <- length(antigen_names)
@@ -3144,6 +3162,19 @@ if (first_in_last_count < since_last_sample_count & last_month_count < since_las
   message("Assignments in first pre-sample months make sense numerically")
 } else {
   message("ERROR: Assignments in pre-sample months do not make numerical sense")
+}
+
+lrti_check.df <-
+  antigen_exposure_response.df %>%
+    dplyr::select(sero_specnum,LRTI_since_last_sample,LRTI_before_next_sample) %>%
+    dplyr::distinct() %>%
+    dplyr::summarise(since_mean = mean(LRTI_since_last_sample),
+                     before_mean = mean(LRTI_before_next_sample))
+
+if (lrti_check.df[1] == lrti_check.df[2]) {
+  message("Pneumonia counts make sense")
+} else {
+  message("ERROR: Pneumonia counts do not match")
 }
 
 ```
@@ -4022,9 +4053,6 @@ plot_var_immunity_level(antigen_exposure_response.df,"ZmpB",zmpB_cor)
 
 ```{r IgG binding mixed effects model}
 
-library(lme4)
-library(sjPlot)
-
 mef_input.df <-
   antigen_exposure_response.df %>%
     dplyr::select(codenum,sero_age,antigen,type,igg) %>%
@@ -4309,8 +4337,6 @@ ggplot(example_exposure_summary_plot.df,
 ### Fit mixed models to understand clustering
 
 ```{r Mixed effects models to understand clustering - data prep}
-
-library(lme4)
 
 mef_input_with_clustering.df <-
   antigen_exposure_response.df %>%
@@ -5259,12 +5285,12 @@ cluster_test.df <-
 
 inheritance_and_exposure.df <-
   antigen_exposure_response.df %>%
-    dplyr::select(codenum,sero_specnum,cluster,antigen,type,sero_age,igg,SinceBirth,FirstSixMonths,LastSample,AnyLRTISinceLastSample,AnySevereLRTISinceLastSample,AnyVerySevereLRTISinceLastSample) %>%
+    dplyr::select(codenum,sero_specnum,cluster,antigen,type,sero_age,igg,SinceBirth,FirstSixMonths,LastSample,AnyLRTISinceLastSample,AnySevereLRTISinceLastSample,AnyVerySevereLRTISinceLastSample,AnyLRTIBeforeNextSample,AnySevereLRTIBeforeNextSample,AnyVerySevereLRTIBeforeNextSample) %>%
     dplyr::group_by(codenum) %>%
     dplyr::mutate(Cord_IgG = dplyr::if_else(sero_age == 'Cord',igg,NA)) %>%
     tidyr::fill(Cord_IgG, .direction = "updown") %>%
     dplyr::ungroup() %>%
-    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+    dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months","24 months")) %>%
     dplyr::mutate(SinceBirth = factor(SinceBirth,
                                       levels = c("NotExposedSinceBirth","ExposedSinceBirth")
                                       )
@@ -5283,9 +5309,30 @@ inheritance_and_exposure.df <-
     dplyr::mutate(UnexposedCount = sum(SinceBirth == "NotExposedSinceBirth")) %>%
     dplyr::mutate(ExposedCount = sum(SinceBirth == "ExposedSinceBirth")) %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample, levels = c("NoLRTISinceLastSample","LRTISinceLastSample"))) %>%
-    dplyr::mutate(AnySevereLRTISinceLastSample = factor(AnySevereLRTISinceLastSample, levels = c("NoSevereLRTISinceLastSample","SevereLRTISinceLastSample"))) %>%
-    dplyr::mutate(AnyVerySevereLRTISinceLastSample = factor(AnyVerySevereLRTISinceLastSample, levels = c("NoVerySevereLRTISinceLastSample","VerySevereLRTISinceLastSample")))
+    dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample,
+                                                  levels = c("NoLRTISinceLastSample",
+                                                             "LRTISinceLastSample"))
+                  ) %>%
+    dplyr::mutate(AnySevereLRTISinceLastSample = factor(AnySevereLRTISinceLastSample,
+                                                  levels = c("NoSevereLRTISinceLastSample",
+                                                             "SevereLRTISinceLastSample"))
+                  ) %>%
+    dplyr::mutate(AnyVerySevereLRTISinceLastSample = factor(AnyVerySevereLRTISinceLastSample,
+                                                  levels = c("NoVerySevereLRTISinceLastSample",
+                                                             "VerySevereLRTISinceLastSample"))
+                  ) %>%
+    dplyr::mutate(AnyLRTIBeforeNextSample = factor(AnyLRTIBeforeNextSample,
+                                                  levels = c("NoLRTIBeforeNextSample",
+                                                             "LRTIBeforeNextSample"))
+                  ) %>%
+    dplyr::mutate(AnySevereLRTIBeforeNextSample = factor(AnySevereLRTIBeforeNextSample,
+                                                  levels = c("NoSevereLRTIBeforeNextSample",
+                                                             "SevereLRTIBeforeNextSample"))
+                  ) %>%
+    dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = factor(AnyVerySevereLRTIBeforeNextSample,
+                                                  levels = c("NoVerySevereLRTIBeforeNextSample",
+                                                             "VerySevereLRTIBeforeNextSample"))
+                  )
 
 inheritance_and_exposure_ordered_individuals <-
   sort(unique(inheritance_and_exposure.df$codenum))
@@ -6351,8 +6398,6 @@ ggplot(zmpB_summary.df,
 ## Run UMAP analyses
 
 ```{r Test UMAP analysis, fig.height = 11, fig.width = 8}
-
-library(umap)
 
 plot_umap <- function(mat,df,perplexity = 40,match_by=NULL,colour_by=NULL,group_by=NULL,shape_by=NULL,group_min=10,max_iter=200) {
   
@@ -7576,7 +7621,13 @@ healthy_colonisation.df <-
     dplyr::summarise(num_samples = n(),
                      num_positive_samples = sum(pnc=="Pneumococcus isolated")) %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(proportion_positive_samples = num_positive_samples/num_samples)
+    dplyr::mutate(proportion_positive_samples = num_positive_samples/num_samples) %>%
+    dplyr::mutate(Colonisation_freq = dplyr::if_else(
+                    proportion_positive_samples > 0.75,
+                    "Frequently colonised",
+                    "Infrequently colonised"
+                  )
+                )
 
 (colonisation_frequency_categorisation_plot <-
   ggplot(healthy_colonisation.df,
@@ -7598,18 +7649,7 @@ antigen_exposure_response_colonisation.df <-
     dplyr::left_join(
       healthy_colonisation.df,
         by = c("sero_specnum")
-    ) %>%
-    dplyr::filter(sero_age %in% c("6 months",
-                                    "12 months",
-                                    "18 months",
-                                    "24 months")
-                  ) %>%
-  dplyr::mutate(Colonisation_freq = dplyr::if_else(
-                    proportion_positive_samples > 0.75,
-                    "Frequently colonised",
-                    "Infrequently colonised"
-                  )
-                )
+    )
 
 plot_igg_levels(antigen_exposure_response_colonisation.df,
                 "Colonisation_freq",
@@ -7834,6 +7874,11 @@ colonisation_by_sero_code.df <-
                                                             "Infrequently_colonised"),
                                              levels = c("Infrequently_colonised","Frequently_colonised")
                                              )
+                  ) %>%
+    dplyr::filter(sero_age %in% c("6 months",
+                                    "12 months",
+                                    "18 months",
+                                    "24 months")
                   )
 
 just_inheritance.df %<>%
@@ -7999,8 +8044,6 @@ inheritance.colonisation_protection.antigen_model <-
 ```
 
 ```{r Plot change in protection by age}
-
-library(multcomp)
 
 # combine CIs using https://stats.stackexchange.com/questions/391040/reporting-models-add-intercept-from-fixed-effect-including-confidence-intervals
 get_estimate_cis <- function(lmer_mod,col_name,base_term) {
@@ -8601,5 +8644,397 @@ serotype.df <-
 
 plot_antigen_distribution(serotype.df) +
   ylab("Serotype")
+
+```
+
+# Updated pneumonia modelling
+
+```{r Plot IgG levels prior to LRTI, fig.height = 11, fig.width = 8}
+
+plot_igg_levels(antigen_exposure_response.df %>%
+                  dplyr::mutate(AnyLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnyLRTIBeforeNextSample)) %>%
+                  dplyr::mutate(AnyLRTIBeforeNextSample = factor(AnyLRTIBeforeNextSample,levels = c("PneumoniaBeforeNextSample","NoPneumoniaBeforeNextSample"))),
+                "AnyLRTIBeforeNextSample",
+                x_lab = "Pneumonia diagnosis before next serum sample",
+                include_ages = c("Birth","6 months", "12 months", "18 months"),
+                wrap_len = 15)
+
+```
+```{r Plot IgG levels prior to severe LRTI, fig.height = 11, fig.width = 8}
+
+plot_igg_levels(antigen_exposure_response.df %>%
+                  dplyr::mutate(AnySevereLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnySevereLRTIBeforeNextSample)) %>%
+                  dplyr::mutate(AnySevereLRTIBeforeNextSample = factor(AnySevereLRTIBeforeNextSample,levels = c("SeverePneumoniaBeforeNextSample","NoSeverePneumoniaBeforeNextSample"))),
+                "AnySevereLRTIBeforeNextSample",
+                x_lab = "Severe pneumonia diagnosis before next serum sample",
+                include_ages = c("Birth","6 months", "12 months", "18 months"),
+                wrap_len = 15)
+
+```
+
+```{r Plot IgG levels prior to very severe LRTI, fig.height = 11, fig.width = 8}
+
+plot_igg_levels(antigen_exposure_response.df %>%
+                  dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnyVerySevereLRTIBeforeNextSample)) %>%
+                  dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = factor(AnyVerySevereLRTIBeforeNextSample,levels = c("VerySeverePneumoniaBeforeNextSample","NoVerySeverePneumoniaBeforeNextSample"))),
+                "AnyVerySevereLRTIBeforeNextSample",
+                x_lab = "Very severe pneumonia diagnosis before next serum sample",
+                include_ages = c("Birth","6 months", "12 months", "18 months"),
+                wrap_len = 15)
+
+```
+
+## Use modelling to test for protective effects of antibodies
+
+```{r Modelling for protective effects, fig.height = 8, fig.width = 8}
+
+colonisation_by_sero_code.df <-
+  antigen_exposure_response_colonisation.df %>%
+    dplyr::select(sero_specnum,
+                  codenum,
+                  category,
+                  sero_age,
+                  Colonisation_freq,
+                  AnyLRTISinceLastSample,
+                  AnySevereLRTISinceLastSample,
+                  AnyVerySevereLRTISinceLastSample,
+                  AnyLRTIBeforeNextSample,
+                  AnySevereLRTIBeforeNextSample,
+                  AnyVerySevereLRTIBeforeNextSample) %>%
+    dplyr::distinct() %>%
+    dplyr::mutate(Colonisation_freq = factor(dplyr::if_else(Colonisation_freq == "Frequently colonised",
+                                                            "Frequently_colonised",
+                                                            "Infrequently_colonised"),
+                                             levels = c("Infrequently_colonised","Frequently_colonised")
+                                             )
+                  ) %>%
+    dplyr::group_by(codenum,category) %>%
+    dplyr::arrange(sero_age) %>%
+    dplyr::mutate(Subsequent_colonisation_freq = dplyr::lead(Colonisation_freq,n = 1L)) %>%
+    dplyr::ungroup()
+
+just_inheritance.df %<>%
+  dplyr::left_join(colonisation_by_sero_code.df %>%
+                     dplyr::select(sero_specnum,Colonisation_freq,Subsequent_colonisation_freq),
+                   by = c("sero_specnum"))
+
+both_inheritance_and_exposure.df %<>%
+  dplyr::left_join(colonisation_by_sero_code.df %>%
+                     dplyr::select(sero_specnum,Colonisation_freq,Subsequent_colonisation_freq),
+                   by = c("sero_specnum"))
+
+inheritance.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + (1|codenum) + 0,
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+      REML = FALSE)
+
+inheritance.protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) + 0,
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+      REML = FALSE)
+
+inheritance.type_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) + 0,
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+      REML = FALSE)
+
+inheritance_and_exposure_since_birth.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+       REML = FALSE)
+
+inheritance_and_exposure_since_birth.protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+       REML = FALSE)
+
+inheritance_and_exposure_since_birth.type_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+       REML = FALSE)
+
+antigen_exposure_protection_models <- 
+  c(inheritance.protection.antigen_model,
+       inheritance.protection.antigen_model,
+       inheritance.type_protection.antigen_model,
+       inheritance_and_exposure_since_birth.antigen_model,
+       inheritance_and_exposure_since_birth.protection.antigen_model,
+       inheritance_and_exposure_since_birth.type_protection.antigen_model)
+
+antigen_response_protection_model_comparisons.df <-
+  pairwise_model_comparisons(antigen_exposure_protection_models)
+
+ggplot(antigen_response_protection_model_comparisons.df,
+       aes(x = i,
+           y = j,
+           colour = delta_aic,
+           fill = delta_aic)) +
+  geom_tile() +
+  scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
+  xlab("Reference model index") +
+  ylab("Comparison model index") +
+  theme_bw()+
+  guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
+         fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+
+```
+
+
+```{r Fit equivalent models for differing pneumonia severities and timings of IgG}
+
+# Post-diagnosis IgG levels
+inheritance.severe_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+      REML = FALSE)
+
+inheritance.very_severe_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+      REML = FALSE)
+
+inheritance_and_exposure_since_birth.severe_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+       REML = FALSE)
+
+inheritance_and_exposure_since_birth.very_severe_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+       REML = FALSE)
+
+inheritance_and_exposure_since_birth.colonisation_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Colonisation_freq + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+       REML = FALSE)
+
+inheritance.colonisation_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Colonisation_freq + (1|codenum) + 0,
+       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+       REML = FALSE)
+
+# Pre-diagnosis IgG levels
+inheritance.protection.prior_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) + 0,
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+      REML = FALSE)
+
+inheritance_and_exposure_since_birth.protection.prior_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       REML = FALSE)
+
+inheritance.severe_protection.prior_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) + 0,
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+      REML = FALSE)
+
+inheritance.very_severe_protection.prior_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) + 0,
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+      REML = FALSE)
+
+inheritance_and_exposure_since_birth.severe_protection.prior_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       REML = FALSE)
+
+inheritance_and_exposure_since_birth.very_severe_protection.prior_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       REML = FALSE)
+
+inheritance_and_exposure_since_birth.colonisation_protection.prior_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) + 0,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       REML = FALSE)
+
+inheritance.colonisation_protection.prior_protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) + 0,
+       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       REML = FALSE)
+
+```
+
+```{r Plot change in protection by age}
+
+# combine CIs using https://stats.stackexchange.com/questions/391040/reporting-models-add-intercept-from-fixed-effect-including-confidence-intervals
+get_estimate_cis <- function(lmer_mod,col_name,base_term,base_val = 0) {
+  factor_vector <- c(
+    paste(paste0(col_name,base_term),"= 0")
+  )
+  Age <-c(base_val)
+  age_nums <- c(0,6,12,18,24)
+  age_vals <- c("Birth","6 months","12 months","18 months","24 months")
+  for (i in 1:length(age_vals)) {
+    if (age_nums[i] > base_val) {
+      if (any(grepl(paste0(age_vals[i],":Any"),names(coef(lmer_mod)[[1]]))) | 
+          any(grepl(paste0(age_vals[i],":Col"),names(coef(lmer_mod)[[1]]))) |
+          any(grepl(paste0(age_vals[i],":Sub"),names(coef(lmer_mod)[[1]])))) {
+        factor_vector <- c(factor_vector,
+                           paste0(col_name,base_term," + `sero_age",age_vals[i],":",col_name,base_term,"` = 0")
+                           )
+        Age <- c(Age,age_nums[i])
+      }
+    }
+  }
+  as_tibble(
+    cbind(
+      Age,
+      confint(
+        glht(lmer_mod,
+         linfct = factor_vector
+         )
+      )$confint
+    )
+  )
+}
+
+protection_estimates_by_age.df <-
+  dplyr::bind_rows(
+    # Pneumonia, post-IgG
+    get_estimate_cis(inheritance.protection.antigen_model,
+                     "AnyLRTISinceLastSample",
+                     "LRTISinceLastSample",
+                     base_val = 6) %>%
+      dplyr::mutate(Model = "Universal exposure") %>%
+      dplyr::mutate(Diagnosis = "Pneumonia") %>%
+      dplyr::mutate(Timepoint = "Post-diagnosis IgG level"),
+    get_estimate_cis(inheritance_and_exposure_since_birth.protection.antigen_model,
+                     "AnyLRTISinceLastSample",
+                     "LRTISinceLastSample",
+                     base_val = 6) %>%
+      dplyr::mutate(Model = "Partial exposure") %>%
+      dplyr::mutate(Diagnosis = "Pneumonia") %>%
+      dplyr::mutate(Timepoint = "Post-diagnosis IgG level"),
+    # Severe pneumonia, post-IgG
+    get_estimate_cis(inheritance.severe_protection.antigen_model,
+                     "AnySevereLRTISinceLastSample",
+                     "SevereLRTISinceLastSample",
+                     base_val = 6) %>%
+      dplyr::mutate(Model = "Universal exposure") %>%
+      dplyr::mutate(Diagnosis = "Severe pneumonia") %>%
+      dplyr::mutate(Timepoint = "Post-diagnosis IgG level"),
+    get_estimate_cis(inheritance_and_exposure_since_birth.severe_protection.antigen_model,
+                     "AnySevereLRTISinceLastSample",
+                     "SevereLRTISinceLastSample",
+                     base_val = 6) %>%
+      dplyr::mutate(Model = "Partial exposure") %>%
+      dplyr::mutate(Diagnosis = "Severe pneumonia") %>%
+      dplyr::mutate(Timepoint = "Post-diagnosis IgG level"),
+    # Very severe pneumonia, post-IgG
+    get_estimate_cis(inheritance.very_severe_protection.antigen_model,
+                     "AnyVerySevereLRTISinceLastSample",
+                     "VerySevereLRTISinceLastSample",
+                     base_val = 6) %>%
+      dplyr::mutate(Model = "Universal exposure") %>%
+      dplyr::mutate(Diagnosis = "Very severe pneumonia") %>%
+      dplyr::mutate(Timepoint = "Post-diagnosis IgG level"),
+    get_estimate_cis(inheritance_and_exposure_since_birth.very_severe_protection.antigen_model,
+                     "AnyVerySevereLRTISinceLastSample",
+                     "VerySevereLRTISinceLastSample",
+                     base_val = 6) %>%
+      dplyr::mutate(Model = "Partial exposure") %>%
+      dplyr::mutate(Diagnosis = "Very severe pneumonia") %>%
+      dplyr::mutate(Timepoint = "Post-diagnosis IgG level"),
+    # Colonisation, post-IgG
+    get_estimate_cis(inheritance.colonisation_protection.antigen_model,
+                     "Colonisation_freq",
+                     "Frequently_colonised",
+                     base_val = 6) %>%
+      dplyr::mutate(Model = "Universal exposure") %>%
+      dplyr::mutate(Diagnosis = "Frequent colonisation") %>%
+      dplyr::mutate(Timepoint = "Post-diagnosis IgG level"),
+    get_estimate_cis(inheritance_and_exposure_since_birth.colonisation_protection.antigen_model,
+                     "Colonisation_freq",
+                     "Frequently_colonised",
+                     base_val = 6) %>%
+      dplyr::mutate(Model = "Partial exposure") %>%
+      dplyr::mutate(Diagnosis = "Frequent colonisation") %>%
+      dplyr::mutate(Timepoint = "Post-diagnosis IgG level"),
+    
+    # Pneumonia, pre-IgG
+    get_estimate_cis(inheritance.protection.prior_protection.antigen_model,
+                     "AnyLRTIBeforeNextSample",
+                     "LRTIBeforeNextSample",
+                     base_val = 0) %>%
+      dplyr::mutate(Model = "Universal exposure") %>%
+      dplyr::mutate(Diagnosis = "Pneumonia") %>%
+      dplyr::mutate(Timepoint = "Pre-diagnosis IgG level"),
+    get_estimate_cis(inheritance_and_exposure_since_birth.protection.prior_protection.antigen_model,
+                     "AnyLRTIBeforeNextSample",
+                     "LRTIBeforeNextSample",
+                     base_val = 0) %>%
+      dplyr::mutate(Model = "Partial exposure") %>%
+      dplyr::mutate(Diagnosis = "Pneumonia") %>%
+      dplyr::mutate(Timepoint = "Pre-diagnosis IgG level"),
+    # Severe pneumonia, pre-IgG
+    get_estimate_cis(inheritance.severe_protection.prior_protection.antigen_model,
+                     "AnySevereLRTIBeforeNextSample",
+                     "SevereLRTIBeforeNextSample",
+                     base_val = 0) %>%
+      dplyr::mutate(Model = "Universal exposure") %>%
+      dplyr::mutate(Diagnosis = "Severe pneumonia") %>%
+      dplyr::mutate(Timepoint = "Pre-diagnosis IgG level"),
+    get_estimate_cis(inheritance_and_exposure_since_birth.severe_protection.prior_protection.antigen_model,
+                     "AnySevereLRTIBeforeNextSample",
+                     "SevereLRTIBeforeNextSample",
+                     base_val = 0) %>%
+      dplyr::mutate(Model = "Partial exposure") %>%
+      dplyr::mutate(Diagnosis = "Severe pneumonia") %>%
+      dplyr::mutate(Timepoint = "Pre-diagnosis IgG level"),
+    # Very severe pneumonia, pre-IgG
+    get_estimate_cis(inheritance.very_severe_protection.prior_protection.antigen_model,
+                     "AnyVerySevereLRTIBeforeNextSample",
+                     "VerySevereLRTIBeforeNextSample",
+                     base_val = 0) %>%
+      dplyr::mutate(Model = "Universal exposure") %>%
+      dplyr::mutate(Diagnosis = "Very severe pneumonia") %>%
+      dplyr::mutate(Timepoint = "Pre-diagnosis IgG level"),
+    get_estimate_cis(inheritance_and_exposure_since_birth.very_severe_protection.prior_protection.antigen_model,
+                     "AnyVerySevereLRTIBeforeNextSample",
+                     "VerySevereLRTIBeforeNextSample",
+                     base_val = 0) %>%
+      dplyr::mutate(Model = "Partial exposure") %>%
+      dplyr::mutate(Diagnosis = "Very severe pneumonia") %>%
+      dplyr::mutate(Timepoint = "Pre-diagnosis IgG level"),
+    # Colonisation, pre-IgG
+    get_estimate_cis(inheritance.colonisation_protection.prior_protection.antigen_model,
+                     "Subsequent_colonisation_freq",
+                     "Frequently_colonised",
+                     base_val = 0) %>%
+      dplyr::mutate(Model = "Universal exposure") %>%
+      dplyr::mutate(Diagnosis = "Frequent colonisation") %>%
+      dplyr::mutate(Timepoint = "Pre-diagnosis IgG level"),
+    get_estimate_cis(inheritance_and_exposure_since_birth.colonisation_protection.prior_protection.antigen_model,
+                     "Subsequent_colonisation_freq",
+                     "Frequently_colonised",
+                     base_val = 0) %>%
+      dplyr::mutate(Model = "Partial exposure") %>%
+      dplyr::mutate(Diagnosis = "Frequent colonisation") %>%
+      dplyr::mutate(Timepoint = "Pre-diagnosis IgG level")
+    
+  )
+
+dodge_width = 0.2
+
+(diagnosis_lmm_by_age_plot <-
+  ggplot(protection_estimates_by_age.df,
+         aes(x = Age,
+             y = Estimate,
+             colour = Diagnosis,
+             ymin = lwr,
+             ymax = upr)) +
+    geom_point(position = position_dodge(width = dodge_width)) +
+    geom_errorbar(width = 0.25, position = position_dodge(width = dodge_width)) +
+    geom_line() +
+    geom_hline(yintercept = 0, linetype = 2) +
+    xlab("Age (months)") +
+    ylab("Relative IgG binding in affected children\nin the previous 6 months") +
+    theme_bw() +
+    facet_grid(Timepoint~Model) +
+    theme(legend.position = "bottom",
+          strip.background = element_blank())
+)
 
 ```
