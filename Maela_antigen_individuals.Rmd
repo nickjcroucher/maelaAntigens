@@ -2797,21 +2797,34 @@ genomic_immunology.df <-
     dplyr::group_by(codenum,category) %>%
     tidyr::fill(c(sero_specnum,sero_age,previous_specdate,first_specdate,Slide.ID),.direction = "updown") %>%
     dplyr::ungroup() %>%
-    # Record cases of disease
+    # Record cases of disease - after sample
     dplyr::group_by(sero_specnum,category) %>%
     dplyr::mutate(LRTI_since_last_sample = sum(diagnosis_clinical %in% c("Pneumonia","Severe pneumonia","Very severe pneumonia"))) %>%
     dplyr::mutate(severe_LRTI_since_last_sample = sum(diagnosis_clinical %in% c("Severe pneumonia","Very severe pneumonia"))) %>%
     dplyr::mutate(very_severe_LRTI_since_last_sample = sum(diagnosis_clinical %in% c("Very severe pneumonia"))) %>%
     dplyr::ungroup() %>%
+    # Record cases of disease - before sample
+    dplyr::group_by(codenum,category) %>%
+    dplyr::mutate(previous_specnum = dplyr::lag(sero_specnum,n = 1L)) %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(previous_specnum,category) %>%
+    dplyr::mutate(LRTI_before_next_sample = sum(diagnosis_clinical %in% c("Pneumonia","Severe pneumonia","Very severe pneumonia"))) %>%
+    dplyr::mutate(severe_LRTI_before_next_sample = sum(diagnosis_clinical %in% c("Severe pneumonia","Very severe pneumonia"))) %>%
+    dplyr::mutate(very_severe_LRTI_before_next_sample = sum(diagnosis_clinical %in% c("Very severe pneumonia"))) %>%
+    dplyr::ungroup() %>%
     dplyr::select(-c(diagnosis_clinical,Xray_diagnosis,specnum)) %>%
     # Summarise data relevant to each IgG analysis
     dplyr::group_by(sero_specnum,
+                    previous_specnum,
                     codenum,
                     category,
                     sero_age,
                     LRTI_since_last_sample,
                     severe_LRTI_since_last_sample,
                     very_severe_LRTI_since_last_sample,
+                    LRTI_before_next_sample,
+                    severe_LRTI_before_next_sample,
+                    very_severe_LRTI_before_next_sample,
                     dob,
                     specdate,
                     previous_specdate,
@@ -2822,7 +2835,24 @@ genomic_immunology.df <-
                      lanes = list(SingleIsolateLane,DeepSeqLane,RepresentativeGenome),
                      accessions = list(SingleIsolateAccession,DeepSeqAccession,RepresentativeAccession)) %>%
     dplyr::ungroup() %>%
-    dplyr::group_by(sero_specnum,codenum,category,sero_age,LRTI_since_last_sample,severe_LRTI_since_last_sample,very_severe_LRTI_since_last_sample,dob,specdate,previous_specdate,first_specdate,Slide.ID,serotypes,GPSCs) %>%
+    dplyr::group_by(sero_specnum,
+                    previous_specnum,
+                    codenum,
+                    category,
+                    sero_age,
+                    LRTI_since_last_sample,
+                    severe_LRTI_since_last_sample,
+                    very_severe_LRTI_since_last_sample,
+                    LRTI_before_next_sample,
+                    severe_LRTI_before_next_sample,
+                    very_severe_LRTI_before_next_sample,
+                    dob,
+                    specdate,
+                    previous_specdate,
+                    first_specdate,
+                    Slide.ID,
+                    serotypes,
+                    GPSCs) %>%
     dplyr::summarise(lanes = list(lanes),
                      accessions = list(accessions),
                      .groups = "drop_last") %>%
@@ -3012,6 +3042,7 @@ antigen_exposure_response.df <-
                       category,
                       sero_age,
                       dob,
+                      previous_specnum,
                       previous_specdate,
                       first_specdate,
                       Slide.ID,
@@ -3028,7 +3059,10 @@ antigen_exposure_response.df <-
                       ExposuresInMonth,
                       LRTI_since_last_sample,
                       severe_LRTI_since_last_sample,
-                      very_severe_LRTI_since_last_sample
+                      very_severe_LRTI_since_last_sample,
+                      LRTI_before_next_sample,
+                      severe_LRTI_before_next_sample,
+                      very_severe_LRTI_before_next_sample,
                   ) %>%
     dplyr::summarise(specdate = max(specdate),
                      serotypesSinceLastSample = list(unique(unlist(serotypes))),
@@ -3051,7 +3085,18 @@ antigen_exposure_response.df <-
                                                           "SevereLRTISinceLastSample")) %>%
     dplyr::mutate(AnyVerySevereLRTISinceLastSample = dplyr::if_else(very_severe_LRTI_since_last_sample==0,
                                                           "NoVerySevereLRTISinceLastSample",
-                                                          "VerySevereLRTISinceLastSample"))
+                                                          "VerySevereLRTISinceLastSample")
+    ) %>%
+    dplyr::mutate(AnyLRTIBeforeNextSample = dplyr::if_else(LRTI_before_next_sample==0,
+                                                          "NoLRTISinceLastSample",
+                                                          "LRTISinceLastSample")) %>%
+    dplyr::mutate(AnySevereLRTIBeforeNextSample = dplyr::if_else(severe_LRTI_before_next_sample==0,
+                                                          "NoSevereLRTISinceLastSample",
+                                                          "SevereLRTISinceLastSample")) %>%
+    dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = dplyr::if_else(very_severe_LRTI_before_next_sample==0,
+                                                          "NoVerySevereLRTISinceLastSample",
+                                                          "VerySevereLRTISinceLastSample")
+    )
 
 n_antigens <- length(antigen_names)
 n_igg_samples <- length(unique(translation.df$sero_specnum))
@@ -8441,7 +8486,8 @@ elisa.df <-
     tidyr::pivot_longer(dplyr::starts_with("PP"), names_to = "Elisa_protein", values_to = "Elisa_value") %>%
     dplyr::left_join(
       read.csv(archive::archive_read("protein_elisa_names.csv.tar.gz")) %>%
-        dplyr::rename(antigen = Array_protein),
+        dplyr::rename(antigen = Array_protein) %>%
+        dplyr::mutate(Label = paste0(Label,"\n(",antigen,")")),
       by = c("Elisa_protein")
     ) %>%
     dplyr::inner_join(
@@ -8451,23 +8497,32 @@ elisa.df <-
     ) %>%
   dplyr::mutate(antigen = factor(antigen))
 
+# References for linking proteins
+# https://patentimages.storage.googleapis.com/2c/5a/b4/3ae4574f184a70/WO1997041151A2.pdf
+# https://journals.asm.org/doi/full/10.1128/iai.68.10.5889-5900.2000?casa_token=c7ZAAZESPqMAAAAA%3AJ7KEEXKQZCGrU8WOWdFBrqpMVWUX4Q0pIrm0Won6OulstnVzqxOCHy3Rweh_7qwoykdacAj0Itwm4MHV
+# https://journals.asm.org/doi/full/10.1128/iai.68.10.5889-5900.2000?casa_token=c7ZAAZESPqMAAAAA%3AJ7KEEXKQZCGrU8WOWdFBrqpMVWUX4Q0pIrm0Won6OulstnVzqxOCHy3Rweh_7qwoykdacAj0Itwm4MHV
+
 ggplot(elisa.df,
        aes(
         x = Elisa_value,
         y = igg)
       ) +
-  geom_point() +
-  scale_x_continuous(trans = "log10") +
+  geom_point(size = 0.25, alpha = 0.5) +
+  scale_x_continuous(trans = "log2") +
   geom_smooth(method = "lm") +
   stat_cor(method = "pearson",
              p.accuracy = 0.000001,
-             label.sep='\n'
+             label.sep='\n',
+           size = 2,
+           label.y = 6.5
   ) +
   xlab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
   ylab("Normalised array IgG measurement") +
-  facet_wrap(~antigen) +
+  facet_wrap(~Label) +
   theme_bw() +
-  theme(strip.background = element_blank())
+  theme(strip.background = element_blank(),
+        axis.text = element_text(size = 5),
+        strip.text = element_text(size = 8))
 
 ```
 
