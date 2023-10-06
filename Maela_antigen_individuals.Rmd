@@ -3204,7 +3204,7 @@ antigen_exposure_response.df %<>%
 
 plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
                             include_ages = c("6 months", "12 months", "18 months", "24 months"),
-                            wrap_len = 25) {
+                            wrap_len = 25, alpha_val = 0.5) {
   
   ref_level <- rlevel
   if (is.null(ref_level)) {
@@ -3244,7 +3244,9 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
       dplyr::mutate(level_count = n_distinct(!!col_var)) %>%
       dplyr::mutate(group_count = min(group_count)) %>%
       dplyr::mutate(ref_present = ref_level %in% !!col_var) %>%
-      dplyr::filter(min(group_count) >= 3 & level_count > 1 & ref_present) %>%
+      dplyr::mutate(min_igg = min(igg)) %>%
+      dplyr::mutate(max_igg = max(igg)) %>%
+      dplyr::filter(min(group_count) >= 3 & level_count > 1 & ref_present & min_igg != max_igg) %>%
       dplyr::ungroup() %>%
       dplyr::group_by(sero_age,type) %>%
       rstatix::wilcox_test(formula(paste("igg ~ ",var)),
@@ -3263,7 +3265,7 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
              x = !!col_var,
              colour = !!col_var,
              fill = !!col_var)) +
-    geom_point(position = position_jitter(), alpha = 0.5, size = 0.25) +
+    geom_point(position = position_jitter(), alpha = alpha_val, size = 0.25) +
     geom_violin(alpha = 0, colour = "black", draw_quantiles = c(0.5),
                scale = "width") +
     facet_grid(type~sero_age) +
@@ -6096,242 +6098,6 @@ exposure_splines_labels.df <-
 
 ```
 
-# Machine learning prediction of cluster membership from birth
-
-```{r Functions for SVM analysis}
-
-make_svm_input <- function(ae.df,age=NULL) {
-    dplyr::left_join(
-      ae.df %>%
-        dplyr::select(codenum,antigen,sero_age,igg) %>%
-        dplyr::filter(sero_age == age) %>%
-        dplyr::select(-c(sero_age)) %>%
-        tidyr::pivot_wider(id_cols = codenum,names_from = antigen,values_from = igg),
-      ae.df %>%
-        dplyr::select(codenum,sero_age,cluster) %>%
-        dplyr::filter(sero_age == "24 months") %>%
-        dplyr::select(-c(sero_age)),
-      by = c("codenum")
-    ) %>%
-    dplyr::select(-codenum) %>%
-    dplyr::mutate(FinalCluster = factor(cluster)) %>%
-    dplyr::select(-cluster)
-}
-
-normalise_svm_input <- function(df) {
-  i.df <-
-    cbind(
-      apply(
-        as.matrix(
-          df %>%
-            dplyr::select(-FinalCluster)
-        ),
-        2,
-        function(v){(v-mean(v)/sd(v))}
-      ),
-      df %>%
-            dplyr::select(FinalCluster)
-    )
-  return(i.df)
-}
-
-plot_svm_weights <- function(svm,a.df) {
-  # Inspired by https://link.springer.com/content/pdf/10.1023/A:1012487302797.pdf
-  weights<- apply(svm$SV, 2, function(v){sqrt(sum(v^2))})  # weight
-  
-  df <-
-    a.df %>%
-      dplyr::select(antigen,type) %>%
-      dplyr::distinct() %>%
-      dplyr::left_join(
-        data.frame(
-          "antigen" = names(weights),
-          "SVM weight" = as.numeric(weights)
-        ),
-        by = c("antigen")
-      )
-  
-  ggplot(df,
-         aes(x = type,
-             y = SVM.weight,
-             colour = type,
-             fill = type)) +
-    geom_point(position = position_jitter(width = 0.1),
-               alpha = 1,
-               size = 0.5) +
-    geom_violin(alpha = 0.1,draw_quantiles = c(0.5),
-               scale = "width") +
-    scale_colour_manual(values = type_palette,
-                        aesthetics = c("fill","colour"),
-                        drop = TRUE, limits = force,
-                        name = "Protein type") +
-    theme_bw() +
-    ylab("Support vector weights")
-}
-
-```
-
-```{r Prediction with SVM from birth data, eval = FALSE}
-
-svm_input <- make_svm_input(antigen_exposure_response.df,age="Birth")
-
-tune.out<-tune(e1071::svm,
-              FinalCluster ~ .,
-              data=svm_input,
-              kernel = "linear", 
-              ranges =list(cost=c(0.001,0.01,0.1, 1,5,10,100)),
-              scale = FALSE)
-
-svmfit = e1071::svm(FinalCluster ~ .,
-             data = svm_input,
-             kernel = "linear",
-             cost = 10,
-             scale = FALSE)
-
-save(tune.out,svm_input,svmfit,
-     file="Maela_antigens_svm_data.Rdata")
-
-```
-
-```{r Demonstrate SVM results have no error independent of cost function}
-
-load("Maela_antigens_svm_data.Rdata")
-
-tune.out$performances %>%
-  kableExtra::kable()  %>%
-  kableExtra::kable_styling(latex_options = "scale_down")
-
-```
-
-```{r Plot contributions to SVM model, fig.width = 8, fig.height = 8}
-
-plot_svm_weights(svmfit,antigens.df)
-
-```
-
-```{r Use cord values for SVM analysis, eval = FALSE}
-
-svm_input_cord <- make_svm_input(antigen_exposure_response.df,age="Cord")
-
-svmfit_cord = e1071::svm(FinalCluster ~ .,
-             data = svm_input_cord,
-             kernel = "linear",
-             cost = 10,
-             scale = FALSE)
-
-save(svm_input_cord,svmfit_cord,
-     file="Maela_antigens_svm_cord_data.Rdata")
-
-```
-
-```{r Plot contributions to SVM cord model, fig.width = 8, fig.height = 8}
-
-load(file="Maela_antigens_svm_cord_data.Rdata")
-
-plot_svm_weights(svmfit_cord,antigens.df)
-
-```
-
-```{r Compare weights to absolute IgG responses}
-
-antigen_SVM_weights.vec <- apply(svmfit$SV, 2, function(v){sqrt(sum(v^2))})
-
-antigen_SVM_weights.df <-
-  data.frame(
-    "antigen" = names(antigen_SVM_weights.vec),
-    "SVM.weight" = as.numeric(antigen_SVM_weights.vec)
-  )
-
-compare_weights_responses.df <-
-  antigen_SVM_weights.df %>%
-    dplyr::left_join(antigen_exposure_response.df %>%
-                       dplyr::select(sero_age,antigen,igg) %>%
-                       dplyr::group_by(sero_age,antigen) %>%
-                       dplyr::summarise(`Mean IgG` = mean(igg)) %>%
-                       dplyr::ungroup(),
-                     by = c("antigen")
-    ) %>%
-    dplyr::left_join(antigens.df %>%
-                       dplyr::select(antigen,type) %>%
-                       dplyr::distinct(),
-                     by = c("antigen")
-                     )
-
-ggplot(compare_weights_responses.df,
-       aes(x = SVM.weight,
-           y = `Mean IgG`,
-           colour = type)) +
-  geom_point(size = 0.5) +
-  facet_wrap(.~sero_age) +
-  theme_bw() +
-  theme(strip.background = element_blank())
-
-```
-
-```{r Normalise SVM input data}
-
-normalised_svm_input <- normalise_svm_input(svm_input)
-normalised_svm_input_cord <- normalise_svm_input(svm_input_cord)
-
-```
-
-```{r Run SVM on normalised birth data, eval = FALSE}
-
-normalised.tune.out<-tune(e1071::svm,
-              FinalCluster ~ .,
-              data=normalised_svm_input,
-              kernel = "linear", 
-              ranges =list(cost=c(0.001,0.01,0.1, 1,5,10,100)),
-              scale = FALSE)
-
-normalised_svmfit = e1071::svm(FinalCluster ~ .,
-             data = normalised_svm_input,
-             kernel = "linear",
-             cost = 10,
-             scale = FALSE)
-
-save(normalised.tune.out,normalised_svm_input,normalised_svmfit,
-     file="normalised_Maela_antigens_svm_data.Rdata")
-
-```
-
-```{r Demonstrate normalised SVM results have no error independent of cost function}
-
-load(file="normalised_Maela_antigens_svm_data.Rdata")
-
-normalised.tune.out$performances %>%
-  kableExtra::kable()  %>%
-  kableExtra::kable_styling(latex_options = "scale_down")
-
-```
-
-```{r Plot SV weights from normalised birth data, fig.width = 8, fig.height = 8}
-
-plot_svm_weights(normalised_svmfit,antigens.df)
-
-```
-
-```{r Run SVM on normalised cord data, eval = FALSE}
-
-normalised_svmfit_cord = e1071::svm(FinalCluster ~ .,
-             data = normalised_svm_input_cord,
-             kernel = "linear",
-             cost = 10,
-             scale = FALSE)
-
-save(normalised.tune.out,normalised_svm_input_cord,normalised_svmfit_cord,
-     file="normalised_Maela_antigens_svm_data_cord.Rdata")
-
-```
-
-```{r Plot SVM on normalised cord data, eval = TRUE}
-
-load(file="normalised_Maela_antigens_svm_data_cord.Rdata")
-
-plot_svm_weights(normalised_svmfit_cord,antigens.df)
-
-```
-
 # ZmpB summary plot
 
 ```{r ZmpB summary plot, fig.width = 8, fig.height = 10}
@@ -7323,7 +7089,7 @@ zmpB_max.df <-
              y = igg,
              shape = sero_age,
              colour = type)) +
-    geom_point() +
+    geom_point(alpha = 0.25) +
     geom_abline(slope = 1, intercept = 0, col = "black", linetype = 2) +
       scale_colour_manual(values = type_palette,
                           aesthetics = c("fill","colour"),
@@ -7335,6 +7101,68 @@ zmpB_max.df <-
     theme_bw() +
     theme(legend.position = "none")
 )
+
+```
+
+``` {r Calulate maximum response}
+
+zmpB_max_count <-
+length(zmpB_max.df %>%
+  dplyr::filter(igg == max_response) %>%
+  dplyr::select(sero_sample) %>%
+  dplyr::distinct() %>%
+  dplyr::pull())
+
+zmpB_close_max_count <-
+length(zmpB_max.df %>%
+  dplyr::filter(igg >= 0.9*max_response) %>%
+  dplyr::select(sero_sample) %>%
+  dplyr::distinct() %>%
+  dplyr::pull())
+
+overall_count <-
+length(zmpB_max.df %>%
+  dplyr::select(sero_sample) %>%
+  dplyr::distinct() %>%
+  dplyr::pull())
+
+zmp_max_proportion <-
+  zmpB_max_count/overall_count
+
+zmp_close_max_proportion <-
+  zmpB_close_max_count/overall_count
+
+cat(paste("Max probe proportion:",zmp_max_proportion,"; Within 10% proportion:",zmp_close_max_proportion))
+
+```
+
+``` {r Plot types of max IgG binding probes}
+
+max_probe_binding <-
+  as.data.frame(table(rownames(probe.igg.data)[apply(probe.igg.data,2,which.max)])) %>%
+    dplyr::mutate(`Probe type` = dplyr::case_when(
+                    grepl("PspA",Var1) ~ "PspA",
+                    grepl("PspC",Var1) ~ "PspC",
+                    grepl("ZmpA",Var1) ~ "ZmpA",
+                    grepl("ZmpB",Var1) ~ "ZmpB",
+                    grepl("CLS01991",Var1) ~ "ZmpC",
+                    TRUE ~ "Other"
+                  )
+    ) %>%
+    dplyr::group_by(`Probe type`) %>%
+    dplyr::summarise(Frequency = sum(Freq)) %>%
+    dplyr::ungroup() 
+
+ggplot(max_probe_binding,
+       aes(x = reorder(`Probe type`,-Frequency),
+           y = Frequency,
+           colour = `Probe type`,
+           fill = `Probe type`)) +
+  geom_col() +
+  scale_fill_manual(values = type_palette, aesthetics = c("colour","fill")) +
+  xlab("Probe type") +
+  ylab("Number of datasets in which probe\nelicits the maximal recorded IgG binding") +
+  theme_bw()
 
 ```
 
@@ -8288,11 +8116,27 @@ early_diagnosis.df <-
     dplyr::distinct() %>%
     dplyr::left_join(colonisation_by_sero_code.df %>%
                        dplyr::filter(sero_age == "6 months") %>%
-                       dplyr::select(codenum,Colonisation_freq,AnyLRTISinceLastSample,AnySevereLRTISinceLastSample,AnyVerySevereLRTISinceLastSample),
+                       dplyr::select(codenum,
+                                     Colonisation_freq,
+                                     AnyLRTISinceLastSample,
+                                     AnySevereLRTISinceLastSample,
+                                     AnyVerySevereLRTISinceLastSample),
                      by = c("codenum")) %>%
-    dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample, levels = c("NoLRTISinceLastSample","LRTISinceLastSample"))) %>%
-    dplyr::mutate(AnySevereLRTISinceLastSample = factor(AnySevereLRTISinceLastSample, levels = c("NoSevereLRTISinceLastSample","SevereLRTISinceLastSample"))) %>%
-    dplyr::mutate(AnyVerySevereLRTISinceLastSample = factor(AnyVerySevereLRTISinceLastSample, levels = c("NoVerySevereLRTISinceLastSample","VerySevereLRTISinceLastSample")))
+    dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample,
+                                                  levels = c("NoLRTISinceLastSample",
+                                                             "LRTISinceLastSample")
+                                                  )
+                  ) %>%
+    dplyr::mutate(AnySevereLRTISinceLastSample = factor(AnySevereLRTISinceLastSample,
+                                                        levels = c("NoSevereLRTISinceLastSample",
+                                                                   "SevereLRTISinceLastSample")
+                                                        )
+                  ) %>%
+    dplyr::mutate(AnyVerySevereLRTISinceLastSample = factor(AnyVerySevereLRTISinceLastSample,
+                                                            levels = c("NoVerySevereLRTISinceLastSample",
+                                                                       "VerySevereLRTISinceLastSample")
+                                                            )
+                  )
     
 get_simple_estimate <- function(lmer_mod,col_name) {
   linfac_name <- paste(col_name," == 0")
@@ -8542,7 +8386,7 @@ cps_kinetics_plot <-
 
 cps_igg.df <-
   antigen_exposure_response_environment.df %>%
-    dplyr::select(sero_specnum,codenum,cluster,sero_age) %>%
+    dplyr::select(sero_specnum,codenum,cluster,sero_age,AnyLRTIBeforeNextSample,AnyLRTISinceLastSample) %>%
     dplyr::distinct() %>%
     dplyr::inner_join(
       cps_raw.df %>%
@@ -8581,6 +8425,50 @@ cps_clustering_plot <-
     rel_heights = c(1,1.2)
   )
 )
+
+```
+
+``` {r Plot cps responses by pneumonia}
+
+plot_igg_levels(cps_igg.df %>%
+                  dplyr::rename(type = Serotype) %>%
+                  dplyr::mutate(AnyLRTISinceLastSample = gsub("LRTI",
+                                                        "Pneumonia",
+                                                        AnyLRTISinceLastSample)
+                ) %>%
+                  dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample,
+                                                                levels = c("PneumoniaSinceLastSample",
+                                                                           "NoPneumoniaSinceLastSample")
+                                                                )
+                ),
+                "AnyLRTISinceLastSample",
+                rlevel = "NoPneumoniaSinceLastSample",
+                x_lab = "Pneumonia diagnosis since last serum sample",
+                wrap_len = 15,
+                alpha_val = 1) +
+  scale_y_continuous(trans = "log2")
+
+```
+
+``` {r Plot cps responses before pneumonia}
+
+plot_igg_levels(cps_igg.df %>%
+                  dplyr::rename(type = Serotype) %>%
+                  dplyr::mutate(AnyLRTIBeforeNextSample = gsub("LRTI",
+                                                        "Pneumonia",
+                                                        AnyLRTIBeforeNextSample)
+                ) %>%
+                  dplyr::mutate(AnyLRTIBeforeNextSample = factor(AnyLRTIBeforeNextSample,
+                                                                levels = c("PneumoniaBeforeNextSample",
+                                                                           "NoPneumoniaBeforeNextSample")
+                                                                )
+                ),
+                "AnyLRTIBeforeNextSample",
+                rlevel = "NoPneumoniaBeforeNextSample",
+                x_lab = "Pneumonia diagnosis before next serum sample",
+                wrap_len = 15,
+                alpha_val = 1) +
+  scale_y_continuous(trans = "log2")
 
 ```
 
