@@ -12,27 +12,40 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(cache = TRUE, warning = FALSE,
                       message = FALSE, cache.lazy = FALSE)
-library(magrittr)
-library(tidyverse)
-library(ggrepel)
-library(tsne)
-library(ggforce)
-library(SIMLR)
-library(rstatix)
-library(ggpubr)
-library(e1071)
-library(kableExtra)
-library(ggbeeswarm)
-library(ggpubr)
-library(corrr)
-library(cowplot)
-library(archive)
-library(viridis)
-library(multcomp)
-library(lme4)
-library(sjPlot)
-library(moments)
-library(umap)
+require(renv)
+renv::restore()
+require(magrittr)
+require(tidyverse)
+require(ggrepel)
+require(tsne)
+require(ggforce)
+require(SIMLR)
+require(rstatix)
+require(ggpubr)
+require(e1071)
+require(kableExtra)
+require(ggbeeswarm)
+require(ggpubr)
+require(corrr)
+require(cowplot)
+require(viridis)
+require(multcomp)
+require(lme4)
+require(sjPlot)
+require(moments)
+require(umap)
+require(archive)
+
+# archive not currently on conda
+if (!(require(archive))) {
+    print("Trying to install archive")
+    install.packages("archive",repos="http://cran.uk.r-project.org")
+    if(require(archive)){
+        print("Archive installed and loaded")
+    } else {
+        stop("Could not install archive")
+    }
+}
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
@@ -8106,6 +8119,25 @@ dodge_width = 0.2
 )
 
 ```
+
+``` {r Plot incidence of pneumonia over time}
+
+pneumoniae_by_age.df <-
+  sampling.df %>%
+    dplyr::group_by(codenum) %>%
+    tidyr::fill(first_specdate) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(grepl("neumonia",diagnosis_clinical))
+
+ggplot(pneumoniae_by_age.df,
+       aes(x = age.d/30.5,
+           y = diagnosis_clinical)) +
+  geom_point(alpha = 0.25, position = position_jitter(width = 0, height = 0.1)) +
+  geom_vline(xintercept = c(6,12,18), linetype = 2) +
+  theme_bw()
+
+```
+
 
 ```{r Model effects of maternal antibodies, fig.width = 8}
 
