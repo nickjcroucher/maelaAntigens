@@ -12,6 +12,19 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(cache = TRUE, warning = FALSE,
                       message = FALSE, cache.lazy = FALSE)
+
+
+# archive not currently on conda
+if (!(require(renv))) {
+    print("Trying to install renv")
+    install.packages("renv",repos="http://cran.uk.r-project.org")
+    if(require(renv)){
+        print("renv installed and loaded")
+    } else {
+        stop("Could not install renv")
+    }
+}
+
 require(renv)
 renv::restore()
 require(magrittr)
@@ -36,16 +49,6 @@ require(moments)
 require(umap)
 require(archive)
 
-# archive not currently on conda
-if (!(require(archive))) {
-    print("Trying to install archive")
-    install.packages("archive",repos="http://cran.uk.r-project.org")
-    if(require(archive)){
-        print("Archive installed and loaded")
-    } else {
-        stop("Could not install archive")
-    }
-}
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
