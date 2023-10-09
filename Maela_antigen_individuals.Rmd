@@ -949,7 +949,7 @@ Some other evaluations
 
 ```{r Evalate assemblies, fig.width = 8, fig.height = 10}
 
-load("Maela_antigens_epidemiological_data.Rdata")
+base::load("Maela_antigens_epidemiological_data.Rdata")
 
 strain.df <-
   read.table(file = "maela_isolate_index.tab",
@@ -2260,7 +2260,7 @@ save(sample_clustering_output,
 
 ```{r Plot number of SIMLR clusters, fig.height = 6, fig.width = 8}
 
-load(file="sample_clustering_scoring.Rdata")
+base::load(file="sample_clustering_scoring.Rdata")
 
 ggplot(data = tibble(
                     "Number of clusters" = 2:10,
@@ -2276,7 +2276,7 @@ ggplot(data = tibble(
 
 ```{r Plot SIMLR output, fig.height = 9, fig.width = 8}
 
-load(file="sample_clustering_output.Rdata")
+base::load(file="sample_clustering_output.Rdata")
 
 clustering_plot.df <-
   tibble::as_tibble(
@@ -2676,7 +2676,7 @@ save(all_individuals_just_late_by_cluster,
 
 ```{r Display late timepoint tSNE plot, fig.height = 11, fig.width = 8}
 
-load("Maela_late_timepoint_tSNE.Rdata")
+base::load("Maela_late_timepoint_tSNE.Rdata")
 
 all_individuals_just_late_by_cluster
 
@@ -4111,7 +4111,7 @@ igg.model_3 <-
 
 ```{r Model comparison}
 
-#load("Maela_antigens_igg_model_fits.Rdata")
+#base::load("Maela_antigens_igg_model_fits.Rdata")
 
 # Test model fits
 anova(igg.model_1,igg.model_2)
@@ -4452,7 +4452,7 @@ igg.int_clustering_model_4 <-
 
 ```{r Model comparison with clustering}
 
-#load("Maela_antigens_igg_model_fits_with_clustering.Rdata")
+#base::load("Maela_antigens_igg_model_fits_with_clustering.Rdata")
 
 clustering_model_list <- c(igg.no_clustering_model_1,igg.fe_clustering_model_1,igg.re_clustering_model_1,igg.int_clustering_model_1,igg.no_clustering_model_2,igg.fe_clustering_model_2,igg.re_clustering_model_2,igg.int_clustering_model_2,igg.no_clustering_model_3,igg.fe_clustering_model_3,igg.re_clustering_model_3,igg.int_clustering_model_3,igg.int_clustering_model_4)
 
@@ -7155,21 +7155,42 @@ cat(paste("Max probe proportion:",zmp_max_proportion,"; Within 10% proportion:",
 ``` {r Plot types of max IgG binding probes}
 
 max_probe_binding <-
-  as.data.frame(table(rownames(probe.igg.data)[apply(probe.igg.data,2,which.max)])) %>%
+  cbind(colnames(probe.igg.data),rownames(probe.igg.data)[apply(probe.igg.data,2,which.max)]) %>%
+    tibble::as_tibble() %>%
+    magrittr::set_colnames(c("sero_specnum","max_binding_probe")) %>%
     dplyr::mutate(`Probe type` = dplyr::case_when(
-                    grepl("PspA",Var1) ~ "PspA",
-                    grepl("PspC",Var1) ~ "PspC",
-                    grepl("ZmpA",Var1) ~ "ZmpA",
-                    grepl("ZmpB",Var1) ~ "ZmpB",
-                    grepl("CLS01991",Var1) ~ "ZmpC",
+                    grepl("PspA",max_binding_probe) ~ "PspA",
+                    grepl("PspC",max_binding_probe) ~ "PspC",
+                    grepl("ZmpA",max_binding_probe) ~ "ZmpA",
+                    grepl("ZmpB",max_binding_probe) ~ "ZmpB",
+                    grepl("CLS01991",max_binding_probe) ~ "ZmpC",
                     TRUE ~ "Other"
                   )
     ) %>%
-    dplyr::group_by(`Probe type`) %>%
-    dplyr::summarise(Frequency = sum(Freq)) %>%
-    dplyr::ungroup() 
+    dplyr::left_join(sampling.df %>%
+                       dplyr::select(sero_specnum,codenum,sero_age) %>%
+                       dplyr::filter(!is.na(sero_specnum)),
+                     by = c("sero_specnum")) %>%
+    dplyr::group_by(`Probe type`,sero_age) %>%
+    dplyr::mutate(Frequency = n()) %>%
+    dplyr::ungroup()
 
 ggplot(max_probe_binding,
+       aes(x = sero_age,
+           y = codenum,
+           fill = `Probe type`,
+           colour = `Probe type`)) +
+  scale_fill_manual(values = type_palette, aesthetics = c("colour","fill")) +
+  geom_tile() +
+  theme_bw()
+
+```
+
+``` {r Plot frequencies of top hits}
+
+ggplot(max_probe_binding %>%
+         dplyr::select(`Probe type`,sero_age,Frequency) %>%
+         dplyr::distinct(),
        aes(x = reorder(`Probe type`,-Frequency),
            y = Frequency,
            colour = `Probe type`,
@@ -7178,6 +7199,7 @@ ggplot(max_probe_binding,
   scale_fill_manual(values = type_palette, aesthetics = c("colour","fill")) +
   xlab("Probe type") +
   ylab("Number of datasets in which probe\nelicits the maximal recorded IgG binding") +
+  facet_wrap(~sero_age) +
   theme_bw()
 
 ```
@@ -8137,6 +8159,8 @@ ggplot(pneumoniae_by_age.df,
            y = diagnosis_clinical)) +
   geom_point(alpha = 0.25, position = position_jitter(width = 0, height = 0.1)) +
   geom_vline(xintercept = c(6,12,18), linetype = 2) +
+  xlab("Age (months)") +
+  ylab("") +
   theme_bw()
 
 ```
