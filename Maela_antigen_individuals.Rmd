@@ -10,7 +10,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(cache = TRUE, warning = FALSE,
+knitr::opts_chunk$set(cache = FALSE, warning = FALSE,
                       message = FALSE, cache.lazy = FALSE)
 
 
@@ -6601,7 +6601,7 @@ test.igg <-
 colnames(test.igg) <- paste0("ind_",c(1:12))
 rownames(test.igg) <- c(paste0("no_",c(1:6)),paste0("yes_",c(1:6)))
 
-sim.out <- SIMLR::SIMLR(test.igg,2)
+sim.out <- SIMLR::SIMLR(test.igg,2,cores.ratio = 0)
 
 y.out <- SIMLR:: SIMLR_Feature_Ranking(sim.out$S,test.igg)
 
@@ -7158,7 +7158,7 @@ max_probe_binding <-
   cbind(colnames(probe.igg.data),rownames(probe.igg.data)[apply(probe.igg.data,2,which.max)]) %>%
     tibble::as_tibble() %>%
     magrittr::set_colnames(c("sero_specnum","max_binding_probe")) %>%
-    dplyr::mutate(`Probe type` = dplyr::case_when(
+    dplyr::mutate(Protein = dplyr::case_when(
                     grepl("PspA",max_binding_probe) ~ "PspA",
                     grepl("PspC",max_binding_probe) ~ "PspC",
                     grepl("ZmpA",max_binding_probe) ~ "ZmpA",
@@ -7167,9 +7167,18 @@ max_probe_binding <-
                     TRUE ~ "Other"
                   )
     ) %>%
+    dplyr::mutate(`Probe type` = dplyr::case_when(
+                    Protein == 'Other' ~ Protein,
+                    grepl("s1",max_binding_probe) ~ paste(Protein,"N terminus"),
+                    grepl("s2",max_binding_probe) ~ paste(Protein,"middle"),
+                    grepl("s3",max_binding_probe) ~ paste(Protein,"C terminus"),
+                    TRUE ~ Protein
+                  )
+    ) %>%
     dplyr::left_join(sampling.df %>%
                        dplyr::select(sero_specnum,codenum,sero_age) %>%
-                       dplyr::filter(!is.na(sero_specnum)),
+                       dplyr::filter(!is.na(sero_specnum)) %>%
+                       dplyr::distinct(),
                      by = c("sero_specnum")) %>%
     dplyr::group_by(`Probe type`,sero_age) %>%
     dplyr::mutate(Frequency = n()) %>%
@@ -7178,8 +7187,8 @@ max_probe_binding <-
 ggplot(max_probe_binding,
        aes(x = sero_age,
            y = codenum,
-           fill = `Probe type`,
-           colour = `Probe type`)) +
+           fill = Protein,
+           colour = Protein)) +
   scale_fill_manual(values = type_palette, aesthetics = c("colour","fill")) +
   geom_tile() +
   theme_bw()
@@ -7189,18 +7198,20 @@ ggplot(max_probe_binding,
 ``` {r Plot frequencies of top hits}
 
 ggplot(max_probe_binding %>%
-         dplyr::select(`Probe type`,sero_age,Frequency) %>%
+         dplyr::select(`Probe type`,Protein,sero_age,Frequency) %>%
          dplyr::distinct(),
        aes(x = reorder(`Probe type`,-Frequency),
            y = Frequency,
-           colour = `Probe type`,
-           fill = `Probe type`)) +
+           colour = Protein,
+           fill = Protein)) +
   geom_col() +
   scale_fill_manual(values = type_palette, aesthetics = c("colour","fill")) +
   xlab("Probe type") +
   ylab("Number of datasets in which probe\nelicits the maximal recorded IgG binding") +
   facet_wrap(~sero_age) +
-  theme_bw()
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
 ```
 
