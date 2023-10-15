@@ -4090,17 +4090,17 @@ mef_input.df <-
                   )
 
 igg.model_1 <-
-  lmer(igg ~ sero_age*type + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + (1|codenum) ,
        data = mef_input.df,
        REML = FALSE)
 
 igg.model_2 <-
-  lmer(igg ~ sero_age + type + (1|codenum) + 0,
+  lmer(igg ~ sero_age + type + (1|codenum) ,
        data = mef_input.df,
        REML = FALSE)
 
 igg.model_3 <-
-  lmer(igg ~ sero_age + (1|type) + (1|codenum) + 0,
+  lmer(igg ~ sero_age + (1|type) + (1|codenum) ,
        data = mef_input.df,
        REML = FALSE)
 
@@ -4379,69 +4379,69 @@ mef_input_with_clustering.df <-
 ```{r Mixed effects models to understand clustering - fit models}
 
 igg.no_clustering_model_1 <-
-  lmer(igg ~ sero_age + type + (1|codenum) + 0,
+  lmer(igg ~ sero_age + type + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.fe_clustering_model_1 <-
-  lmer(igg ~ sero_age + type + cluster + (1|codenum) + 0,
+  lmer(igg ~ sero_age + type + cluster + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.re_clustering_model_1 <-
-  lmer(igg ~ sero_age + type + (1|cluster) + (1|codenum) + 0,
+  lmer(igg ~ sero_age + type + (1|cluster) + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.int_clustering_model_1 <-
-  lmer(igg ~ sero_age + type + cluster*type + (1|codenum) + 0,
+  lmer(igg ~ sero_age + type + cluster*type + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 
 igg.no_clustering_model_2 <-
-  lmer(igg ~ sero_age + (1|type) + (1|codenum) + 0,
+  lmer(igg ~ sero_age + (1|type) + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.fe_clustering_model_2 <-
-  lmer(igg ~ sero_age + (1|type) + cluster + (1|codenum) + 0,
+  lmer(igg ~ sero_age + (1|type) + cluster + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.re_clustering_model_2 <-
-  lmer(igg ~ sero_age + (1|type) + (1|cluster) + (1|codenum) + 0,
+  lmer(igg ~ sero_age + (1|type) + (1|cluster) + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.int_clustering_model_2 <-
-  lmer(igg ~ sero_age + (1|type) + cluster*type + (1|codenum) + 0,
+  lmer(igg ~ sero_age + (1|type) + cluster*type + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 
 igg.no_clustering_model_3 <-
-  lmer(igg ~ sero_age*type + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.fe_clustering_model_3 <-
-  lmer(igg ~ sero_age*type + cluster + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + cluster + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.re_clustering_model_3 <-
-  lmer(igg ~ sero_age*type + (1|cluster) + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + (1|cluster) + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.int_clustering_model_3 <-
-  lmer(igg ~ sero_age*type + cluster*type + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + cluster*type + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
 igg.int_clustering_model_4 <-
-  lmer(igg ~ sero_age*type*cluster + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type*cluster + (1|codenum) ,
        data = mef_input_with_clustering.df,
        REML = FALSE)
 
@@ -4968,8 +4968,8 @@ ggplot(resummarise_igg_distributions.df,
            fill = type)
        ) +
   stat_summary(geom="ribbon",
-               fun.min = function(x) quantile(x, 0.25),
-               fun.max = function(x) quantile(x, 0.75),
+               fun.min = function(x) quantile(x, 0),
+               fun.max = function(x) quantile(x, 1),
                alpha = 0.25) + 
   stat_summary(geom="line", fun.y=median) +
   scale_colour_manual(values = type_palette,
@@ -5376,12 +5376,12 @@ just_inheritance.df <-
     dplyr::filter(!(antigen %in% both_inheritance_and_exposure.antigen_list))
 
 simple.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + (1|codenum) ,
        data = just_inheritance.df,
        REML = FALSE)
 
 inheritance.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + (1|codenum) ,
        data = just_inheritance.df,
        REML = FALSE)
 
@@ -5390,17 +5390,17 @@ inheritance.antigen_model <-
 ```{r Fit models including exposure}
 
 inheritance_and_exposure_since_birth.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + (1|codenum) ,
        data = both_inheritance_and_exposure.df,
        REML = FALSE)
 
 inheritance_and_exposure_first_six_months.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + FirstSixMonths*antigen + Cord_IgG*antigen + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + FirstSixMonths*antigen + Cord_IgG*antigen + (1|codenum) ,
        data = both_inheritance_and_exposure.df,
        REML = FALSE)
 
 inheritance_and_exposure_last_six_months.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + LastSample*antigen + Cord_IgG*antigen + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + LastSample*antigen + Cord_IgG*antigen + (1|codenum) ,
        data = both_inheritance_and_exposure.df,
        REML = FALSE)
 
@@ -6617,7 +6617,7 @@ ggplot(as.data.frame(y.out),
 
 ```
 
-## Detaiil of ZmpB responses
+## Detail of ZmpB responses
 
 ```{r Processing of raw data to generate foreground values for ZmpB, eval=FALSE}
 
@@ -7780,37 +7780,37 @@ both_inheritance_and_exposure.df %<>%
                    by = c("sero_specnum"))
 
 inheritance.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + (1|codenum) ,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
       REML = FALSE)
 
 inheritance.protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) ,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
       REML = FALSE)
 
 inheritance.type_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) ,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
       REML = FALSE)
 
 inheritance_and_exposure_since_birth.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + (1|codenum) ,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) ,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.type_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) ,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 antigen_exposure_protection_models <- 
-  c(inheritance.protection.antigen_model,
+  c(inheritance.antigen_model,
        inheritance.protection.antigen_model,
        inheritance.type_protection.antigen_model,
        inheritance_and_exposure_since_birth.antigen_model,
@@ -7894,82 +7894,6 @@ exposure_protection_outlier_labels.df <-
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           strip.background = element_blank())
 )
-
-```
-
-```{r Fit equivalent models for differing pneumonia severities and timings of IgG}
-
-# Post-diagnosis IgG levels
-inheritance.severe_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
-      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
-      REML = FALSE)
-
-inheritance.very_severe_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
-      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
-      REML = FALSE)
-
-inheritance_and_exposure_since_birth.severe_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
-       REML = FALSE)
-
-inheritance_and_exposure_since_birth.very_severe_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
-       REML = FALSE)
-
-inheritance_and_exposure_since_birth.colonisation_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Colonisation_freq + (1|codenum) + 0,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
-       REML = FALSE)
-
-inheritance.colonisation_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Colonisation_freq + (1|codenum) + 0,
-       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
-       REML = FALSE)
-
-# Pre-diagnosis IgG levels
-inheritance.protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) + 0,
-      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
-      REML = FALSE)
-
-inheritance_and_exposure_since_birth.protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) + 0,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
-       REML = FALSE)
-
-inheritance.severe_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) + 0,
-      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
-      REML = FALSE)
-
-inheritance.very_severe_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) + 0,
-      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
-      REML = FALSE)
-
-inheritance_and_exposure_since_birth.severe_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) + 0,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
-       REML = FALSE)
-
-inheritance_and_exposure_since_birth.very_severe_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) + 0,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
-       REML = FALSE)
-
-inheritance_and_exposure_since_birth.colonisation_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) + 0,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
-       REML = FALSE)
-
-inheritance.colonisation_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) + 0,
-       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
-       REML = FALSE)
 
 ```
 
@@ -8218,7 +8142,7 @@ get_simple_estimate <- function(lmer_mod,col_name) {
 }
 
 early_diagnosis_carriage.antigen_model <-
-  lmer(igg ~ antigen + Colonisation_freq + (1|codenum) + 0,
+  lmer(igg ~ antigen + Colonisation_freq + (1|codenum) ,
        data = early_diagnosis.df,
        REML = FALSE)
 
@@ -8227,7 +8151,7 @@ protection_against_carriage.df <-
                       "Colonisation_freqFrequently_colonised")
 
 early_diagnosis_pneumonia.antigen_model <-
-  lmer(igg ~ antigen + AnyLRTISinceLastSample*type + (1|codenum) + 0,
+  lmer(igg ~ antigen + AnyLRTISinceLastSample*type + (1|codenum) ,
        data = early_diagnosis.df,
        REML = FALSE)
 
@@ -8236,7 +8160,7 @@ protection_against_pneumonia.df <-
                       "AnyLRTISinceLastSampleLRTISinceLastSample")
 
 early_diagnosis_severe_pneumonia.antigen_model <-
-  lmer(igg ~ antigen + AnySevereLRTISinceLastSample + (1|codenum) + 0,
+  lmer(igg ~ antigen + AnySevereLRTISinceLastSample + (1|codenum) ,
        data = early_diagnosis.df,
        REML = FALSE)
 
@@ -8245,7 +8169,7 @@ protection_against_severe_pneumonia.df <-
                       "AnySevereLRTISinceLastSampleSevereLRTISinceLastSample")
 
 early_diagnosis_very_severe_pneumonia.antigen_model <-
-  lmer(igg ~ antigen + AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
+  lmer(igg ~ antigen + AnyVerySevereLRTISinceLastSample + (1|codenum) ,
        data = early_diagnosis.df,
        REML = FALSE)
 
@@ -8321,7 +8245,8 @@ inheritance_and_exposure_pneumonia_with_predictions.df <-
 ggplot(inheritance_and_exposure_pneumonia_with_predictions.df,
        aes(x = igg,
            y = predicted,
-           colour = Exposed)) +
+           colour = Exposed,
+           fill = Exposed)) +
   geom_point(alpha = 0.25,
              size = 0.25) +
   geom_smooth(method = "lm") +
@@ -8542,9 +8467,9 @@ plot_igg_levels(cps_igg.df %>%
 
 ```
 
-# Multivariate environmental model
+# Simple environmental model
 
-``` {r Multivariate environmental model}
+``` {r Simple environmental model}
 
 me_env.df <-
   mef_input_with_clustering.df %>%
@@ -8559,49 +8484,117 @@ me_env.df <-
                        dplyr::distinct(),
                      by = c("codenum","sero_age"))
 
-igg.int_clustering_model_4_rerun <-
-  lmer(igg ~ sero_age*type*cluster + (1|codenum) + 0,
+igg.simple.individual <-
+  lmer(igg ~ sero_age + (1|codenum),
        data = me_env.df,
        REML = FALSE)
 
-igg.with_ethnicity <-
-  lmer(igg ~ sero_age*type*cluster + (1|codenum) + mother_ethnic_group + 0,
-       data = me_env.df,
-       REML = FALSE)
-
-igg.with_smoking <-
-  lmer(igg ~ sero_age*type*cluster + (1|codenum) + mother_smoke + 0,
-       data = me_env.df,
-       REML = FALSE)
-
-igg.with_sex <-
-  lmer(igg ~ sero_age*type*cluster + (1|codenum) + infant_gender + 0,
-       data = me_env.df,
-       REML = FALSE)
-
-igg.with_bw <-
-  lmer(igg ~ sero_age*type*cluster + (1|codenum) + infant_bw + 0,
-       data = me_env.df,
-       REML = FALSE)
-
-igg.with_fuel <-
-  lmer(igg ~ sero_age*type*cluster + (1|codenum) + house_fuel + 0,
-       data = me_env.df,
-       REML = FALSE)
-
-igg.with_all_env <-
-  lmer(igg ~ sero_age*type*cluster + (1|codenum) + mother_ethnic_group + mother_smoke + infant_gender + infant_bw  + house_fuel + 0,
+igg.simple.individual_with_ethnicity <-
+  lmer(igg ~ sero_age + mother_ethnic_group + (1|codenum),
        data = me_env.df,
        REML = FALSE)
 
 
-env_model_list <- c(igg.int_clustering_model_4_rerun,
-                    igg.with_ethnicity,
-                    igg.with_smoking,
-                    igg.with_sex,
-                    igg.with_bw,
-                    igg.with_fuel,
-                    igg.with_all_env)
+igg.simple.individual_with_smoking <-
+  lmer(igg ~ sero_age + mother_smoke + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+igg.simple.individual_with_sex <-
+  lmer(igg ~ sero_age + infant_gender + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+igg.simple.individual_with_bw <-
+  lmer(igg ~ sero_age + infant_bw + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+igg.simple.individual_with_fuel <-
+  lmer(igg ~ sero_age + house_fuel + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+simple_env_model_list <- c(igg.simple.individual,
+                    igg.simple.individual_with_ethnicity,
+                    igg.simple.individual_with_smoking,
+                    igg.simple.individual_with_sex,
+                    igg.simple.individual_with_bw,
+                    igg.simple.individual_with_fuel)
+
+simple_env_model_comparison.df <-
+  pairwise_model_comparisons(simple_env_model_list)
+
+ggplot(simple_env_model_comparison.df,
+       aes(x = i,
+           y = j,
+           colour = delta_aic,
+           fill = delta_aic)) +
+  geom_tile() +
+  scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
+  xlab("Reference model index") +
+  ylab("Comparison model index") +
+  theme_bw() +
+  guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
+         fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+
+```
+
+```{r Tabulate simple env model comparisons}
+
+simple_env_model_comparison.df %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_styling(latex_options = "scale_down")
+
+```
+
+``` {r Details of house fuel model}
+
+sjPlot::plot_model(igg.simple.individual_with_fuel)
+
+```
+
+# Comparison of clustering and environmental effects
+
+``` {r Multivariate environmental model}
+
+igg.individual <-
+  lmer(igg ~ sero_age*type*cluster + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+igg.individual_with_ethnicity <-
+  lmer(igg ~ sero_age*type*mother_ethnic_group + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+
+igg.individual_with_smoking <-
+  lmer(igg ~ sero_age*type*mother_smoke + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+igg.individual_with_sex <-
+  lmer(igg ~ sero_age*type*infant_gender + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+igg.individual_with_bw <-
+  lmer(igg ~ sero_age*type*infant_bw + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+igg.individual_with_fuel <-
+  lmer(igg ~ sero_age*type*house_fuel + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+env_model_list <- c(igg.individual,
+                    igg.individual_with_ethnicity,
+                    igg.individual_with_smoking,
+                    igg.individual_with_sex,
+                    igg.individual_with_bw,
+                    igg.individual_with_fuel)
 
 env_model_comparison.df <-
   pairwise_model_comparisons(env_model_list)
@@ -8776,6 +8769,68 @@ plot_igg_levels(antigen_exposure_response.df %>%
                 x_lab = "Very severe pneumonia diagnosis before next serum sample",
                 include_ages = c("Birth","6 months", "12 months", "18 months"),
                 wrap_len = 15)
+
+```
+
+``` {r Plot changes in IgG levels by age, fig.height = 8, fig.width = 8}
+
+ggplot(antigen_exposure_response.df %>%
+         dplyr::group_by(antigen,sero_age) %>%
+         dplyr::mutate(mean_response = mean(igg)) %>%
+         dplyr::ungroup() %>%
+         dplyr::group_by(type,sero_age) %>%
+         dplyr::mutate(mean_change = mean(igg_delta)) %>%
+         dplyr::ungroup() %>%
+         dplyr::group_by(antigen,codenum) %>%
+         dplyr::mutate(prev_mean_response = dplyr::lag(mean_response, n = 1L, order_by = sero_age)) %>%
+         dplyr::ungroup() %>%
+         dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+         dplyr::mutate(different_from_mean = igg - igg_delta - prev_mean_response),
+       aes(x = different_from_mean,
+           y = igg_delta,
+           colour = type,
+           fill = type)) +
+  geom_point(alpha = 0.25, size = 0.25) +
+  scale_y_continuous(limits = c(-5,5)) +
+  geom_smooth(method = "lm", formula = y ~ x) +
+  xlab("Difference between individual IgG response and population mean at previous timepoint") +
+  ylab("Change in IgG response since last timepoint") +
+  scale_colour_manual(values = type_palette, aesthetics = c("fill","colour")) +
+  #geom_hline(aes(yintercept = mean_change), linetype = 2) +
+  stat_cor(method = "pearson",
+             p.accuracy = 0.000001,
+             label.sep='\n',
+             label.x = -8,
+             label.y = -2.5
+  ) +
+  facet_grid(type~sero_age) +
+  theme(legend.position = "none")
+
+```
+
+``` {r Check data}
+
+cowplot::plot_grid(
+  plotlist = list(
+    ggplot(antigen_exposure_response.df %>%
+         dplyr::filter(type == "CellWall") %>%
+         dplyr::group_by(sero_age,type) %>%
+         dplyr::mutate(mean_change = mean(igg_delta)) %>%
+         dplyr::ungroup(),
+       aes(x = sero_age,
+           y = mean_change)) +
+      geom_point(position = position_jitter()),
+    ggplot(antigen_exposure_response.df %>%
+         dplyr::filter(type == "ZmpA") %>%
+         dplyr::group_by(sero_age,type) %>%
+         dplyr::mutate(mean_igg = mean(igg)) %>%
+         dplyr::ungroup(),
+       aes(x = sero_age,
+           y = mean_igg)) +
+      geom_point(position = position_jitter())
+  ),
+  ncol = 2
+)
 
 ```
 
