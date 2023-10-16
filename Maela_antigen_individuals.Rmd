@@ -5452,25 +5452,25 @@ get_type_values <- function(df) {
                           ) %>%
     dplyr::distinct() %>%
     dplyr::select(-variable) %>%
-    tibble::add_row(type_response = 1, type = "Adhesin")
+    tibble::add_row(type_response = 0, type = "Adhesin")
 }
 
 combine_exposure_model_outputs <- function(i.model, ie.model) {
 
     inheritance_and_exposure.coef <- as.data.frame(coef(ie.model)[[1]])
-    base_inheritance_and_exposure_igg_level <- inheritance_and_exposure.coef$`(Intercept)`
+    base_inheritance_and_exposure_igg_level <- mean(inheritance_and_exposure.coef$`(Intercept)`)
     base_inheritance_and_exposure_cord_correlation <- unique(inheritance_and_exposure.coef$Cord_IgG)
     base_inheritance_and_exposure_since_birth <- unique(inheritance_and_exposure.coef$SinceBirthExposedSinceBirth)
     
-    base_inheritance_and_exposure_6_months <- unique(inheritance_and_exposure.coef$`sero_age6 months`)
+    #base_inheritance_and_exposure_6_months <- unique(inheritance_and_exposure.coef$`sero_age6 months`) # Now included in intercept
     base_inheritance_and_exposure_12_months <- unique(inheritance_and_exposure.coef$`sero_age12 months`)
     base_inheritance_and_exposure_18_months <- unique(inheritance_and_exposure.coef$`sero_age18 months`)
     base_inheritance_and_exposure_24_months <- unique(inheritance_and_exposure.coef$`sero_age24 months`)
     
     inheritance.coef <- as.data.frame(coef(i.model)[[1]])
-    base_inheritance_igg_level <- inheritance.coef$`(Intercept)`
+    base_inheritance_igg_level <- mean(inheritance.coef$`(Intercept)`)
     base_inheritance_cord_correlation <- unique(inheritance.coef$Cord_IgG)
-    base_inheritance_6_months <- unique(inheritance.coef$`sero_age6 months`)
+    #base_inheritance_6_months <- unique(inheritance.coef$`sero_age6 months`) # Now included in intercept
     base_inheritance_12_months <- unique(inheritance.coef$`sero_age12 months`)
     base_inheritance_18_months <- unique(inheritance.coef$`sero_age18 months`)
     base_inheritance_24_months <- unique(inheritance.coef$`sero_age24 months`)
@@ -5527,84 +5527,53 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                 dplyr::select(-variable),
             by = c("antigen")
           ) %>%
-          
+          # Get 6 month timepoint
           dplyr::left_join(
               # Factors for age - 6 months
-              inheritance_and_exposure_types.df %>%
-                dplyr::rename(month_6 = type_response),
+              inheritance_and_exposure_types.df,
             by = c("type")
           ) %>%
-          
+          dplyr::mutate(`6 months` = type_response + base_inheritance_and_exposure_igg_level) %>%
+          dplyr::select(-type_response) %>%
+          # Calculate changes at other timepoints
           dplyr::left_join(
-              # Factors for age - 12 months
               inheritance_and_exposure.coef %>%
-                dplyr::select(dplyr::starts_with('sero_age12 months:type')) %>%
+                dplyr::select(dplyr::contains('months:type')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
-                                    values_to = "month_12") %>%
-                dplyr::mutate(type = gsub("sero_age12 months:type",
-                                          "",
-                                          variable)
-                              ) %>%
-                dplyr::distinct() %>%
-                dplyr::select(-variable) %>%
-                dplyr::left_join(
-                  inheritance_and_exposure_types.df,
-                  by = c("type")
+                                    values_to = "value") %>%
+                tidyr::separate(variable,sep = ':',into = c("sero_age","type")) %>%
+                dplyr::mutate(
+                  sero_age = gsub("sero_age","",sero_age),
+                  type = gsub("type","",type)
                 ) %>%
-                dplyr::mutate(month_12 = month_12 + type_response) %>%
-                dplyr::select(-type_response),
-            by = c("type")
-          ) %>%
-          
-          dplyr::left_join(
-              # Factors for age - 18 months
-              inheritance_and_exposure.coef %>%
-                dplyr::select(dplyr::starts_with('sero_age18 months:type')) %>%
-                tidyr::pivot_longer(cols = everything(),
-                                    names_to = "variable",
-                                    values_to = "month_18") %>%
-                dplyr::mutate(type = gsub("sero_age18 months:type",
-                                          "",
-                                          variable)
-                              ) %>%
                 dplyr::distinct() %>%
-                dplyr::select(-variable) %>%
-                dplyr::left_join(
-                  inheritance_and_exposure_types.df,
-                  by = c("type")
+                tidyr::pivot_wider(id_cols = type,
+                                   names_from = sero_age,
+                                   values_from = value) %>%
+                dplyr::add_row(
+                  type = 'Adhesin',
+                  `12 months` = 0,
+                  `18 months` = 0,
+                  `24 months` = 0
                 ) %>%
-                dplyr::mutate(month_18 = month_18 + type_response) %>%
-                dplyr::select(-type_response),
-            by = c("type")
+                dplyr::mutate(
+                  `12 months` = `12 months` + base_inheritance_and_exposure_12_months,
+                  `18 months` = `18 months` + base_inheritance_and_exposure_18_months,
+                  `24 months` = `24 months` + base_inheritance_and_exposure_24_months,
+                ),
+              by = c("type")
           ) %>%
-          
-          dplyr::left_join(
-              # Factors for age - 24 months
-              inheritance_and_exposure.coef %>%
-                dplyr::select(dplyr::starts_with('sero_age24 months:type')) %>%
-                tidyr::pivot_longer(cols = everything(),
-                                    names_to = "variable",
-                                    values_to = "month_24") %>%
-                dplyr::mutate(type = gsub("sero_age24 months:type",
-                                          "",
-                                          variable)
-                              ) %>%
-                dplyr::distinct() %>%
-                dplyr::select(-variable) %>%
-                dplyr::left_join(
-                  inheritance_and_exposure_types.df,
-                  by = c("type")
-                ) %>%
-                dplyr::mutate(month_24 = month_24 + type_response) %>%
-                dplyr::select(-type_response),
-            by = c("type")
+          # Add baseline to timepoints
+          dplyr::mutate(
+              `12 months` = `12 months` + `6 months`,
+              `18 months` = `18 months` + `6 months`,
+              `24 months` = `24 months` + `6 months`
           ) %>%
-          
           dplyr::left_join(
               # Responses by antigen
               inheritance_and_exposure.coef %>%
-                dplyr::select(dplyr::starts_with('antigen')) %>%
+                dplyr::select(dplyr::starts_with('antigen') & !dplyr::ends_with('SinceBirthExposedSinceBirth') & !dplyr::ends_with('Cord_IgG')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
                                     values_to = "antigen_response") %>%
@@ -5613,40 +5582,25 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                                              variable)
                               ) %>%
                 dplyr::distinct() %>%
-                dplyr::mutate(antigen_response = antigen_response) %>%
                 dplyr::select(-variable),
             by = c("antigen")
           ) %>%
-          tidyr::pivot_longer(cols = c(month_6,
-                                       month_12,
-                                       month_18,
-                                       month_24,
+          dplyr::mutate(antigen_response = dplyr::if_else(is.na(antigen_response),0,antigen_response)) %>% # For each type there is an undefined reference level antigen
+          tidyr::pivot_longer(cols = c(`6 months`,
+                                       `12 months`,
+                                       `18 months`,
+                                       `24 months`,
                                        antigen_response,
                                        IgG_in_cord,
                                        IgG_After_Exposure),
                               names_to = "IgG_response",
                               values_to = "IgG") %>%
-          
-          # Add adhesin levels (as reference here)
-          dplyr::mutate(IgG = dplyr::case_when(
-                    IgG_response == "month_6" & type == "Adhesin" ~ base_inheritance_and_exposure_6_months,
-                    IgG_response == "month_12" & type == "Adhesin" ~ base_inheritance_and_exposure_12_months,
-                    IgG_response == "month_18" & type == "Adhesin" ~ base_inheritance_and_exposure_18_months,
-                    IgG_response == "month_24" & type == "Adhesin" ~ base_inheritance_and_exposure_24_months,
-                    IgG_response == "month_6" & type != "Adhesin" ~ IgG + base_inheritance_and_exposure_6_months,
-                    IgG_response == "month_12" & type != "Adhesin" ~ IgG + base_inheritance_and_exposure_12_months,
-                    IgG_response == "month_18" & type != "Adhesin" ~ IgG + base_inheritance_and_exposure_18_months,
-                    IgG_response == "month_24" & type != "Adhesin" ~ IgG + base_inheritance_and_exposure_24_months,
-                    IgG_response == "type_response" & type == "Adhesin" ~ 1,
-                    TRUE ~ IgG
-                  )
-          ) %>%
           dplyr::mutate(Model = "Differential exposure"),
         ################################################
         # Models not including differences in exposure #
         ################################################
         inheritance.coef %>%
-    
+          # Get cord correlation
           dplyr::select(dplyr::ends_with(':Cord_IgG')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
@@ -5667,84 +5621,53 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
               dplyr::distinct(),
             by = c("antigen")
           ) %>%
-          
+          # Get 6 month timepoint
           dplyr::left_join(
               # Factors for age - 6 months
-              inheritance_types.df %>%
-                dplyr::rename(month_6 = type_response),
+              inheritance_types.df,
             by = c("type")
           ) %>%
-          
+          dplyr::mutate(`6 months` = type_response + base_inheritance_igg_level) %>%
+          dplyr::select(-type_response) %>%
+          # Calculate changes at other timepoints
           dplyr::left_join(
-              # Factors for age - 12 months
               inheritance.coef %>%
-                dplyr::select(dplyr::starts_with('sero_age12 months:type')) %>%
+                dplyr::select(dplyr::contains('months:type')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
-                                    values_to = "month_12") %>%
-                dplyr::mutate(type = gsub("sero_age12 months:type",
-                                          "",
-                                          variable)
-                              ) %>%
-                dplyr::distinct() %>%
-                dplyr::select(-variable) %>%
-                dplyr::left_join(
-                  inheritance_types.df,
-                  by = c("type")
+                                    values_to = "value") %>%
+                tidyr::separate(variable,sep = ':',into = c("sero_age","type")) %>%
+                dplyr::mutate(
+                  sero_age = gsub("sero_age","",sero_age),
+                  type = gsub("type","",type)
                 ) %>%
-                dplyr::mutate(month_12 = month_12 + type_response) %>%
-                dplyr::select(-type_response),
-            by = c("type")
-          ) %>%
-          
-          dplyr::left_join(
-              # Factors for age - 18 months
-              inheritance.coef %>%
-                dplyr::select(dplyr::starts_with('sero_age18 months:type')) %>%
-                tidyr::pivot_longer(cols = everything(),
-                                    names_to = "variable",
-                                    values_to = "month_18") %>%
-                dplyr::mutate(type = gsub("sero_age18 months:type",
-                                          "",
-                                          variable)
-                              ) %>%
                 dplyr::distinct() %>%
-                dplyr::select(-variable) %>%
-                dplyr::left_join(
-                  inheritance_types.df,
-                  by = c("type")
+                tidyr::pivot_wider(id_cols = type,
+                                   names_from = sero_age,
+                                   values_from = value) %>%
+                dplyr::add_row(
+                  type = 'Adhesin',
+                  `12 months` = 0,
+                  `18 months` = 0,
+                  `24 months` = 0
                 ) %>%
-                dplyr::mutate(month_18 = month_18 + type_response) %>%
-                dplyr::select(-type_response),
-            by = c("type")
+                dplyr::mutate(
+                  `12 months` = `12 months` + base_inheritance_12_months,
+                  `18 months` = `18 months` + base_inheritance_18_months,
+                  `24 months` = `24 months` + base_inheritance_24_months,
+                ),
+              by = c("type")
           ) %>%
-          
-          dplyr::left_join(
-              # Factors for age - 24 months
-              inheritance.coef %>%
-                dplyr::select(dplyr::starts_with('sero_age24 months:type')) %>%
-                tidyr::pivot_longer(cols = everything(),
-                                    names_to = "variable",
-                                    values_to = "month_24") %>%
-                dplyr::mutate(type = gsub("sero_age24 months:type",
-                                          "",
-                                          variable)
-                              ) %>%
-                dplyr::distinct() %>%
-                dplyr::select(-variable) %>%
-                dplyr::left_join(
-                  inheritance_types.df,
-                  by = c("type")
-                ) %>%
-                dplyr::mutate(month_24 = month_24 + type_response) %>%
-                dplyr::select(-type_response),
-            by = c("type")
+          # Add baseline to timepoints
+          dplyr::mutate(
+              `12 months` = `12 months` + `6 months`,
+              `18 months` = `18 months` + `6 months`,
+              `24 months` = `24 months` + `6 months`
           ) %>%
-    
           dplyr::left_join(
               # Responses by antigen
               inheritance.coef %>%
-                dplyr::select(dplyr::starts_with('antigen')) %>%
+                dplyr::select(dplyr::starts_with('antigen') & !dplyr::ends_with('Cord_IgG')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
                                     values_to = "antigen_response") %>%
@@ -5753,33 +5676,18 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                                              variable)
                               ) %>%
                 dplyr::distinct() %>%
-                dplyr::mutate(antigen_response = antigen_response) %>%
                 dplyr::select(-variable),
             by = c("antigen")
           ) %>%
-          tidyr::pivot_longer(cols = c(month_6,
-                                       month_12,
-                                       month_18,
-                                       month_24,
+          dplyr::mutate(antigen_response = dplyr::if_else(is.na(antigen_response),0,antigen_response)) %>% # For each type there is an undefined reference level antigen
+          tidyr::pivot_longer(cols = c(`6 months`,
+                                       `12 months`,
+                                       `18 months`,
+                                       `24 months`,
                                        antigen_response,
                                        IgG_in_cord),
                               names_to = "IgG_response",
                               values_to = "IgG") %>%
-          
-          # Add adhesin levels (as reference here)
-          dplyr::mutate(IgG = dplyr::case_when(
-                    IgG_response == "month_6" & type == "Adhesin" ~ base_inheritance_6_months,
-                    IgG_response == "month_12" & type == "Adhesin" ~ base_inheritance_12_months,
-                    IgG_response == "month_18" & type == "Adhesin" ~ base_inheritance_18_months,
-                    IgG_response == "month_24" & type == "Adhesin" ~ base_inheritance_24_months,
-                    IgG_response == "month_6" & type != "Adhesin" ~ IgG + base_inheritance_6_months,
-                    IgG_response == "month_12" & type != "Adhesin" ~ IgG + base_inheritance_12_months,
-                    IgG_response == "month_18" & type != "Adhesin" ~ IgG + base_inheritance_18_months,
-                    IgG_response == "month_24" & type != "Adhesin" ~ IgG + base_inheritance_24_months,
-                    IgG_response == "type_response" & type == "Adhesin" ~ 1,
-                    TRUE ~ IgG
-                  )
-          ) %>%
           dplyr::mutate(Model = "Universal exposure")
       ) %>%
       dplyr::mutate(IgG_response = dplyr::case_when(
@@ -5790,10 +5698,10 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                     )
       ) %>%
       dplyr::mutate(IgG_response = factor(IgG_response,
-                                          levels = c("month_6",
-                                                     "month_12",
-                                                     "month_18",
-                                                     "month_24",
+                                          levels = c("6 months",
+                                                     "12 months",
+                                                     "18 months",
+                                                     "24 months",
                                                      "Binding to protein type",
                                                      "Correlation with cord sample",
                                                      "Change after exposure")
@@ -5815,7 +5723,10 @@ exposure_outlier_labels.df <-
 
 (modelling_response_after_exposure_plot <-
   ggplot(antigen_response_analysis.df %>%
-           dplyr::filter(IgG_response %in% c("Binding to protein type",
+           tidyr::pivot_wider(id_cols = c(antigen,Model,type), names_from = IgG_response, values_from = IgG) %>%
+           dplyr::mutate(age_specific_response = `24 months` + `Binding to protein type`) %>%
+           tidyr::pivot_longer(cols = -c(antigen,Model,type), names_to = "IgG_response", values_to = "IgG") %>%
+           dplyr::filter(IgG_response %in% c("age_specific_response",
                                                    "Correlation with cord sample",
                                                    "Change after exposure")) %>%
          dplyr::mutate(Model = dplyr::if_else(Model == "Differential exposure",
@@ -5864,10 +5775,10 @@ exposure_outlier_labels.df <-
 ```{r Plot types by age, fig.width = 8, fig.height = 8}
 
 ggplot(antigen_response_analysis.df %>%
-         dplyr::filter(IgG_response %in% c("month_6",
-                                                 "month_12",
-                                                 "month_18",
-                                                 "month_24")) %>%
+         dplyr::filter(IgG_response %in% c("6 months",
+                                                 "12 months",
+                                                 "18 months",
+                                                 "24 months")) %>%
          dplyr::select(type,IgG_response,IgG,Model) %>%
          dplyr::distinct() %>%
          dplyr::mutate(Model = dplyr::if_else(Model == "Differential exposure",
@@ -5926,6 +5837,7 @@ inheritance_and_exposure_with_predictions.df <-
                                                   "Universal"
                                                   )
                     ) %>%
+      dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
       dplyr::group_by(Exposed) %>%
       dplyr::mutate(index=row_number()) %>%
       dplyr::ungroup() %>%
@@ -5959,6 +5871,48 @@ ggplot(inheritance_and_exposure_with_predictions.df,
              label.sep='\n'
   ) +
   theme_bw()
+
+```
+
+``` {r Check values}
+
+check_analysis.df <-
+  inheritance_and_exposure_with_predictions.df %>%
+    dplyr::select(codenum,sero_specnum,antigen,type,sero_age,igg,predicted,Exposed,SinceBirth,Cord_IgG) %>%
+    dplyr::mutate(Model = paste(Exposed,"exposure")) %>%
+    # Age factor
+    dplyr::left_join(antigen_response_analysis.df %>%
+                       dplyr::select(antigen,IgG_response,IgG) %>%
+                       dplyr::rename(age_contribution = IgG),
+                     by = c("antigen","sero_age"="IgG_response")) %>%
+    # Cord contribution
+    dplyr::left_join(antigen_response_analysis.df %>%
+                       dplyr::filter(IgG_response == "Correlation with cord sample") %>%
+                       dplyr::select(antigen,IgG) %>%
+                       dplyr::rename(cord_correlation = IgG),
+                     by = c("antigen")) %>%
+    # Type contribution
+    dplyr::left_join(antigen_response_analysis.df %>%
+                       dplyr::filter(IgG_response == "Binding to protein type") %>%
+                       dplyr::select(antigen,IgG) %>%
+                       dplyr::rename(antigen_effect = IgG),
+                     by = c("antigen")) %>%
+    # Exposure contribution
+    dplyr::left_join(antigen_response_analysis.df %>%
+                       dplyr::filter(IgG_response == "Change after exposure") %>%
+                       dplyr::select(antigen,IgG) %>%
+                       dplyr::rename(exposure_effect = IgG),
+                     by = c("antigen")) %>%
+    dplyr::mutate(exposure_effect = dplyr::if_else(is.na(exposure_effect),0,exposure_effect)) %>%
+    # Calculate prediction
+    dplyr::mutate(combined_prediction = age_contribution + antigen_effect + Cord_IgG*cord_correlation) %>%
+    dplyr::mutate(combined_prediction = dplyr::if_else(SinceBirth == "ExposedSinceBirth",combined_prediction+exposure_effect,combined_prediction))
+    
+ggplot(check_analysis.df,
+       aes(x = predicted,
+           y = combined_prediction)) +
+  geom_point() +
+  facet_wrap(~Model)
 
 ```
 
