@@ -8085,6 +8085,14 @@ protection_estimates_by_age.df <-
 
 dodge_width = 0.2
 
+pneumonia_palette <-
+  c(
+    "Frequent colonisation" = "purple",
+    "Pneumonia" = "skyblue",
+    "Severe pneumonia" = "blue",
+    "Very severe pneumonia" = "navy"
+  )
+
 (diagnosis_lmm_by_age_plot <-
   ggplot(protection_estimates_by_age.df,
          aes(x = Age,
@@ -8098,6 +8106,7 @@ dodge_width = 0.2
     geom_hline(yintercept = 0, linetype = 2) +
     xlab("Age (months)") +
     ylab(expression(atop('Relative IgG binding in affected children in the','previous 6 months (log'[2]~'change in fluorescence)'))) +
+    scale_colour_manual(values = pneumonia_palette) +
     theme_bw() +
     facet_grid(Timepoint~Model) +
     theme(legend.position = "bottom",
@@ -8115,17 +8124,64 @@ pneumoniae_by_age.df <-
     dplyr::ungroup() %>%
     dplyr::filter(grepl("neumonia",diagnosis_clinical))
 
-ggplot(pneumoniae_by_age.df,
-       aes(x = age.d/30.5,
-           y = diagnosis_clinical)) +
-  geom_point(alpha = 0.25, position = position_jitter(width = 0, height = 0.1)) +
-  geom_vline(xintercept = c(6,12,18), linetype = 2) +
-  xlab("Age (months)") +
-  ylab("") +
-  theme_bw()
+(pneumonia_by_time_plot <-
+  ggplot(pneumoniae_by_age.df,
+         aes(x = age.d/30.5,
+             y = diagnosis_clinical,
+             colour = diagnosis_clinical)) +
+    geom_point(alpha = 0.5, position = position_jitter(width = 0, height = 0.1)) +
+    geom_vline(xintercept = c(6,12,18), linetype = 2) +
+    scale_colour_manual(values = pneumonia_palette) +
+    xlab("Age (months)") +
+    scale_y_discrete(labels = c("Pneumonia","Severe\npneumonia","Very severe\npneumonia")) +
+    ylab("") +
+    theme_bw() +
+    theme(legend.position = "none")
+)
 
 ```
 
+# Assemble Figure 7
+
+``` {r Assemble Figure 7, fig.width = 8, fig.height = 9}
+
+colonisation_by_time_plot <-
+  ggplot(antigen_exposure_response_colonisation.df %>%
+           dplyr::select(codenum,sero_age,Colonisation_freq) %>%
+           dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+           dplyr::distinct(),
+         aes(x = sero_age,
+             colour = Colonisation_freq,
+             fill = Colonisation_freq)) +
+    geom_bar() +
+    scale_colour_manual(values = c("Frequently colonised" = "darkviolet",
+                                   "Infrequently colonised" = "mediumpurple1"),
+                        labels = c("Frequently\ncolonised","Infrequently\ncolonised"),
+                        name = "Colonisation\nfrequency",
+                        aesthetics = c("fill","colour")) +
+    xlab("Age") +
+    ylab("Frequency")
+
+cowplot::plot_grid(
+  plotlist = list(
+    diagnosis_lmm_by_age_plot,
+    cowplot::plot_grid(
+      plotlist = list(
+        pneumonia_by_time_plot,
+        colonisation_by_time_plot
+      ),
+      ncol = 2,
+      labels = c("b","c")
+    )
+  ),
+  nrow = 2,
+  labels = c("a","")
+)
+
+```
+
+
+# Maternal antibody effects
 
 ```{r Model effects of maternal antibodies, fig.width = 8}
 
@@ -8772,6 +8828,43 @@ ggplot(elisa.df,
 
 ```
 
+``` {r Difference between clusters from ELISA}
+
+elisa_model <-
+  lmer(Elisa_value ~ sero_age*Elisa_protein*cluster + (1|codenum),
+       data = elisa.df,
+       REML = FALSE)
+
+elisa_with_predictions.df <-
+  elisa.df %>%
+    dplyr::mutate(predicted = predict(elisa_model))
+
+elisa_cluster_ratio.df <-
+  elisa_with_preddictions.df %>%
+    dplyr::distinct() %>%
+    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+    dplyr::filter(cluster %in% c("Infant high","Infant low")) %>%
+    dplyr::group_by(cluster,sero_age,Elisa_protein) %>%
+    dplyr::summarise(predicted = mean(predicted)) %>%
+    dplyr::group_by() %>%
+    tidyr::pivot_wider(names_from = cluster, values_from = predicted) %>%
+    dplyr::mutate(Ratio = `Infant high`/`Infant low`)
+
+(elisa_cluster_ratio_plot <-
+  ggplot(elisa_cluster_ratio.df,
+         aes(x = sero_age,
+             y = Ratio)) +
+    geom_point(position = position_jitter(width = 0.25)) +
+    geom_violin(draw_quantiles = c(0.5),
+                scale = "width",
+                colour = "black",
+                alpha = 0.0) +
+    geom_hline(yintercept = 1, linetype = 2) +
+    xlab("Age") +
+    ylab("Ratio of infant high cluster to infant low cluster\nIgG titres")
+)
+
+```
 
 # Plot serotype distribution
 
@@ -8889,7 +8982,7 @@ cowplot::plot_grid(
 
 # Calculate cluster ratio
 
-``` {r Calculate cluster rational}
+``` {r Calculate cluster rational, fig.height = 8, fig.width = 9}
 
 cluster_ratio.df <-
   inheritance_and_exposure_with_predictions.df %>%
@@ -8901,13 +8994,51 @@ cluster_ratio.df <-
     dplyr::summarise(predicted = mean(predicted)) %>%
     dplyr::group_by() %>%
     tidyr::pivot_wider(names_from = cluster, values_from = predicted) %>%
-    dplyr::mutate(Ratio = `Infant high`/`Infant low`)
+    dplyr::mutate(logRatio = `Infant high` - `Infant low`) %>%
+    dplyr::mutate(Ratio = `Infant high`**2/`Infant low`**2)
 
-ggplot(cluster_ratio.df,
-       aes(x = sero_age,
-           y = Ratio)) +
-  geom_point()
+array_cluster_ratio_plot <-
+  ggplot(cluster_ratio.df,
+         aes(x = sero_age,
+             y = Ratio,
+             colour = type)) +
+    geom_point(position = position_jitter(width = 0.25)) +
+    geom_violin(draw_quantiles = c(0.5),
+                scale = "width",
+                colour = "black",
+                alpha = 0.0) +
+    geom_hline(yintercept = 1, linetype = 2) +
+    xlab("Age") +
+    ylab("Ratio of infant high cluster to infant low cluster\nIgG binding (fluorescence change)") +
+    scale_colour_manual(values = type_palette, name = "Protein type")
 
-2**mean(cluster_ratio.df$Ratio)
+cowplot::plot_grid(
+  plotlist = list(
+    cowplot::plot_grid(
+      plotlist = list(
+        array_cluster_ratio_plot + theme(legend.position = "none"),
+        elisa_cluster_ratio_plot
+      ),
+      nrow = 2,
+      labels = "auto"
+    ),
+    cowplot::get_legend(array_cluster_ratio_plot + theme(legend.direction = "horizontal"))
+  ),
+  nrow = 2,
+  rel_heights = c(1,0.1)
+)
 
 ```
+
+``` {r Tabulate ratios}
+
+tibble(
+    "Method" = c("Array","Elisa"),
+    "MeanRatio" = c(mean(cluster_ratio.df$Ratio),mean(elisa_cluster_ratio.df$Ratio))
+  ) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_styling(latex_options = "scale_down")
+
+
+```
+
