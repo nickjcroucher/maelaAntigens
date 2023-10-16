@@ -2414,7 +2414,7 @@ kruskal.test(rank~type,antigen_importance.df)
              fill = type)) +
     geom_point(position = position_jitter(), size = 0.5) +
     geom_violin(alpha = 0.25,
-                draw_quantiles = c(0.5),,
+                draw_quantiles = c(0.5),
                scale = "width") +
     theme_bw() +
     xlab("Protein type") +
@@ -3292,7 +3292,7 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
     theme_bw() +
     xlab(x_lab) +
     scale_x_discrete(labels = function(x) str_wrap(x, width = wrap_len)) +
-    ylab("IgG binding level") + 
+    ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) + 
     scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           legend.position = "bottom",
@@ -3423,7 +3423,7 @@ plot_igg_change <- function(df,var,rlevel = NULL) {
                          tip.length = 0,
                          label = "p.adj.signif",
                          inherit.aes = FALSE) +
-    ylab(expression(Delta~"IgG level")) +
+    ylab(expression(Delta~'IgG binding level (change in log'[2]~'change in fluorescence)')) +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           legend.position = "bottom",
@@ -3487,7 +3487,7 @@ ggplot(antigen_exposure_response.df %>%
                       aesthetics = c("fill","colour"),
                       drop = TRUE, limits = force,
                       name = "Protein type") +
-  ylab(expression(Delta*"IgG level")) +
+  ylab(expression('Change in IgG binding level (change in log'[2]~'change in fluorescence)')) +
   xlab("Age") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
@@ -4160,7 +4160,7 @@ ggplot(igg_prediction.df,
                       name = "Protein type") +
   theme_bw() +
   xlab("Age") +
-  ylab("Predicted IgG binding") +
+  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
   theme(legend.position = "bottom")
 
 ```
@@ -4191,7 +4191,7 @@ ggplot(igg_prediction.df,
           legend.position = "bottom",
           strip.background = element_blank()) +
     xlab("Age") +
-    ylab("IgG binding") +
+    ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
     guides(colour = guide_legend(override.aes = list(alpha = 1)))
 )
 
@@ -4503,8 +4503,8 @@ ggplot(inheritance_and_exposure_with_predictions.df,
   geom_point(alpha = 0.25,
              size = 0.25) +
   geom_smooth(method = "lm") +
-  xlab("Observed IgG level") +
-  ylab("Predicted IgG level") +
+  xlab(expression('Observed IgG binding level (log'[2]~'change in fluorescence)')) +
+  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
   scale_colour_manual(values = type_palette,
                       aesthetics = c("fill","colour"),
                       drop = TRUE, limits = force,
@@ -4526,8 +4526,8 @@ ggplot(inheritance_and_exposure_with_predictions.df,
   geom_point(alpha = 0.25,
              size = 0.25) +
   geom_smooth(method = "lm") +
-  xlab("Observed IgG level") +
-  ylab("Predicted IgG level") +
+  xlab(expression('Observed IgG binding level (log'[2]~'change in fluorescence)')) +
+  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
   stat_cor(method = "pearson",
              p.accuracy = 0.000001,
              label.sep='\n'
@@ -4572,7 +4572,7 @@ ggplot(igg_prediction_with_clustering.df,
         legend.position = "bottom",
         strip.background = element_blank()) +
   xlab("Age") +
-  ylab("Predicted IgG level")
+  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)'))
 
 ```
 
@@ -4622,7 +4622,7 @@ ggplot(antigen_exposure_response.df,
         strip.background = element_blank()) +
   guides(colour = guide_legend(override.aes = list(alpha=1))) +
   xlab("Age") +
-  ylab("IgG prediction")
+  ylab(expression('IgG binding level (log'[2]~'change in fluorescence)'))
 
 ```
 
@@ -4722,7 +4722,7 @@ simple_mef_type.df <-
              group = type)) +
     geom_line(size = 1) +
     geom_point() +
-    ylab("IgG binding prediction") +
+    ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
     xlab("Age") +
     scale_colour_manual(values = type_palette,
                         aesthetics = c("fill","colour"),
@@ -5287,7 +5287,7 @@ cluster_test.df <-
                               inherit.aes = FALSE) +
   facet_wrap(.~Age, ncol = 2) +
   xlab("Protein type") +
-  ylab("IgG binding") +
+  ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
         legend.position = "right",
@@ -5877,7 +5877,7 @@ ggplot(antigen_response_analysis.df %>%
                       drop = TRUE, limits = force,
                       name = "Protein type") +
   scale_x_discrete(labels = c("6 months","12 months","18 months","24 months")) +
-  ylab("IgG binding") +
+  ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
   xlab("Age") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
@@ -5941,8 +5941,8 @@ ggplot(inheritance_and_exposure_with_predictions.df,
   geom_point(alpha = 0.25,
              size = 0.25) +
   geom_smooth(method = "lm") +
-  xlab("Observed IgG level") +
-  ylab("Predicted IgG level") +
+  xlab(expression('Observed IgG binding level (log'[2]~'change in fluorescence)')) +
+  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
   stat_cor(method = "pearson",
              p.accuracy = 0.000001,
              label.sep='\n'
@@ -5992,7 +5992,7 @@ ggplot(lmem_exposure_summary_plot.df,
     geom_smooth() +
     ylim(c(-1,8)) +
     xlab("Number of antigen-positive samples since birth") +
-    ylab("IgG binding") +
+    ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
     theme_bw() +
     scale_shape_manual(values = sero_age_shapes[names(sero_age_shapes) %in% c("6 months","12 months","18 months","24 months")],
                        name = "Age") +
@@ -6032,7 +6032,7 @@ ggplot(pclA_exposure_summary_plot.df,
     geom_smooth() +
     ylim(c(-1,8)) +
     xlab("Number of antigen-positive samples since birth") +
-    ylab("IgG binding") +
+    ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
     theme_bw() +
     scale_shape_manual(values = sero_age_shapes[names(sero_age_shapes) %in% c("6 months","12 months","18 months","24 months")],
                        name = "Age") +
@@ -6091,7 +6091,7 @@ exposure_splines_labels.df <-
     scale_alpha_manual(values = c("Response" = 1,
                                      "No response" = 0.25)
                        ) +
-    ylab("Median IgG level") +
+    ylab(expression('Median IgG binding level (log'[2]~'change in fluorescence)')) +
     xlab("Number of positive samples since birth") +
     facet_wrap(.~type) +
     ggrepel::geom_label_repel(data = exposure_splines_labels.df,
@@ -6144,8 +6144,8 @@ ggplot(zmpB_summary.df,
                       aesthetics = c("fill","colour"),
                       drop = TRUE, limits = force,
                       name = "Protein type") +
-  xlab("Mean IgG in cord sample") +
-  ylab("Mean IgG at 6 months") +
+  xlab(expression('Mean IgG binding level in cord sample (log'[2]~'change in fluorescence)')) +
+  ylab(expression('Mean IgG binding level at 6 mo (log'[2]~'change in fluorescence)')) +
   geom_smooth(method = "lm") +
   stat_cor(label.y = 6.5) +
   facet_wrap(.~type, nrow = 5) +
@@ -6167,8 +6167,8 @@ ggplot(zmpB_summary.df,
                       aesthetics = c("fill","colour"),
                       drop = TRUE, limits = force,
                       name = "Protein type") +
-  ylab("Mean IgG at 24 months") +
-  xlab("Mean IgG at 6 months") +
+  ylab(expression('Mean IgG binding level at 24 mo (log'[2]~'change in fluorescence)')) +
+  xlab(expression('Mean IgG binding level at 6 mo (log'[2]~'change in fluorescence)')) +
   geom_smooth(method = "lm") +
   stat_cor(label.y = 6) +
   facet_wrap(.~type, nrow = 5) +
@@ -6834,7 +6834,7 @@ plot_zmp_df <- function(df) {
   geom_smooth() +
   facet_wrap(.~Gene.ID) +
   xlab("Sample") +
-  ylab("IgG binding") +
+  ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
   ggrepel::geom_label_repel(data = df %>%
                               dplyr::filter(sero_age == "24 months") %>%
                               dplyr::group_by(probe) %>%
@@ -7001,7 +7001,7 @@ plot_by_domain <- function(df,dom=NA) {
   geom_violin(alpha = 0.1, draw_quantiles = c(0.5),
                scale = "width") +
   xlab("Probe type") +
-  ylab("IgG") +
+  ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
   ggtitle(paste("Domain:",dom)) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
@@ -7072,7 +7072,7 @@ annotated_responses_to_domains.df <-
                 alpha = 0.1,
                scale = "width") +
     facet_grid(probe_type~Gene) +
-    ylab("IgG binding") +
+    ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
     xlab("Age") +
     scale_shape_manual(values = sero_age_shapes, name = "Age") +
     scale_colour_manual(values = c(type_palette,"ZmpC"="magenta"),
@@ -7112,8 +7112,8 @@ zmpB_max.df <-
                           drop = TRUE, limits = force,
                           name = "Protein type") +
     scale_shape_manual(values = sero_age_shapes, name = "Age") +
-    ylab("IgG binding to ZmpB N terminal probe") +
-    xlab("Maximum IgG binding across all probes") +
+    ylab(expression('IgG binding to ZmpB N terminal probe (log'[2]~'change in fluorescence)')) +
+    xlab(expression('Maximum IgG binding across all probes (log'[2]~'change in fluorescence)')) +
     theme_bw() +
     theme(legend.position = "none")
 )
@@ -7458,8 +7458,8 @@ first_and_last_outliers.df <-
     geom_abline(intercept = 0, slope = 1, linetype = 2) +
     ylim(c(-1.5,5.5)) +
     xlim(c(-0.5,6.5)) +
-    ylab("Median IgG binding at 24 mo") +
-    xlab("Median IgG binding in maternal birth sample") +
+    ylab(expression('Median IgG binding at 24 mo (log'[2]~'change in fluorescence)')) +
+    xlab(expression('IgG binding in maternal birth sample (log'[2]~'change in fluorescence)')) +
     geom_smooth(colour = "black") +
     ggrepel::geom_label_repel(data = first_and_last_outliers.df %>%
                                       dplyr::filter(prot_label != "-" & !(type %in% c("PspA","non-ABT"))) %>%
@@ -8071,7 +8071,7 @@ dodge_width = 0.2
     geom_line() +
     geom_hline(yintercept = 0, linetype = 2) +
     xlab("Age (months)") +
-    ylab("Relative IgG binding in affected children\nin the previous 6 months") +
+    ylab(expression(atop('Relative IgG binding in affected children in the','previous 6 months (log'[2]~'change in fluorescence)'))) +
     theme_bw() +
     facet_grid(Timepoint~Model) +
     theme(legend.position = "bottom",
@@ -8203,7 +8203,7 @@ ggplot(maternal_protection.df,
   geom_point() +
   geom_errorbar(width = 0.05) +
   xlab("Diagnosis in first six months of child's life") +
-  ylab("Relative IgG binding in the umbilical cord sample") +
+  ylab(expression('Relative IgG binding in cord sample (log'[2]~'change in fluorescence)')) +
   geom_hline(yintercept = 0, linetype = 2) +
   theme_bw()
 
@@ -8250,8 +8250,8 @@ ggplot(inheritance_and_exposure_pneumonia_with_predictions.df,
   geom_point(alpha = 0.25,
              size = 0.25) +
   geom_smooth(method = "lm") +
-  xlab("Observed IgG level") +
-  ylab("Predicted IgG level") +
+  xlab(expression('Observed IgG binding to ZmpB N terminal probe (log'[2]~'change in fluorescence)')) +
+  ylab(expression('Predicted IgG binding to ZmpB N terminal probe (log'[2]~'change in fluorescence)')) +
   stat_cor(method = "pearson",
              p.accuracy = 0.000001,
              label.sep='\n'
@@ -8480,7 +8480,8 @@ me_env.df <-
                                      mother_smoke,
                                      infant_gender,
                                      infant_bw,
-                                     house_fuel) %>%
+                                     house_fuel,
+                                     house_fire) %>%
                        dplyr::distinct(),
                      by = c("codenum","sero_age"))
 
@@ -8510,6 +8511,11 @@ igg.simple.individual_with_bw <-
        data = me_env.df,
        REML = FALSE)
 
+igg.simple.individual_with_fire <-
+  lmer(igg ~ sero_age + house_fire + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
 igg.simple.individual_with_fuel <-
   lmer(igg ~ sero_age + house_fuel + (1|codenum),
        data = me_env.df,
@@ -8520,6 +8526,7 @@ simple_env_model_list <- c(igg.simple.individual,
                     igg.simple.individual_with_smoking,
                     igg.simple.individual_with_sex,
                     igg.simple.individual_with_bw,
+                    igg.simple.individual_with_fire,
                     igg.simple.individual_with_fuel)
 
 simple_env_model_comparison.df <-
@@ -8584,6 +8591,11 @@ igg.individual_with_bw <-
        data = me_env.df,
        REML = FALSE)
 
+igg.individual_with_fire <-
+  lmer(igg ~ sero_age*type*house_fire + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
 igg.individual_with_fuel <-
   lmer(igg ~ sero_age*type*house_fuel + (1|codenum),
        data = me_env.df,
@@ -8594,6 +8606,7 @@ env_model_list <- c(igg.individual,
                     igg.individual_with_smoking,
                     igg.individual_with_sex,
                     igg.individual_with_bw,
+                    igg.individual_with_fire,
                     igg.individual_with_fuel)
 
 env_model_comparison.df <-
@@ -8665,7 +8678,7 @@ ggplot(elisa.df,
            label.y = 6.5
   ) +
   xlab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
-  ylab("Normalised array IgG measurement") +
+  ylab(expression('Array measurement of IgG binding (log'[2]~'change in fluorescence)')) +
   facet_wrap(~Label) +
   theme_bw() +
   theme(strip.background = element_blank(),
@@ -8793,8 +8806,8 @@ ggplot(antigen_exposure_response.df %>%
   geom_point(alpha = 0.25, size = 0.25) +
   scale_y_continuous(limits = c(-5,5)) +
   geom_smooth(method = "lm", formula = y ~ x) +
-  xlab("Difference between individual IgG response and population mean at previous timepoint") +
-  ylab("Change in IgG response since last timepoint") +
+  xlab(expression('Difference between individual IgG response and population mean at previous timepoint (log'[2]~'change in fluorescence)')) +
+  ylab(expression('Change in IgG response since last timepoint (log'[2]~'change in fluorescence)')) +
   scale_colour_manual(values = type_palette, aesthetics = c("fill","colour")) +
   #geom_hline(aes(yintercept = mean_change), linetype = 2) +
   stat_cor(method = "pearson",
@@ -8834,3 +8847,27 @@ cowplot::plot_grid(
 
 ```
 
+# Calculate cluster ratio
+
+``` {r Calculate cluster rational}
+
+cluster_ratio.df <-
+  inheritance_and_exposure_with_predictions.df %>%
+    dplyr::select(sero_age,type,cluster,codenum,predicted) %>%
+    dplyr::distinct() %>%
+    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+    dplyr::filter(cluster %in% c("Infant high","Infant low")) %>%
+    dplyr::group_by(cluster,sero_age,type) %>%
+    dplyr::summarise(predicted = mean(predicted)) %>%
+    dplyr::group_by() %>%
+    tidyr::pivot_wider(names_from = cluster, values_from = predicted) %>%
+    dplyr::mutate(Ratio = `Infant high`/`Infant low`)
+
+ggplot(cluster_ratio.df,
+       aes(x = sero_age,
+           y = Ratio)) +
+  geom_point()
+
+2**mean(cluster_ratio.df$Ratio)
+
+```
