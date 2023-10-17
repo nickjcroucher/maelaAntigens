@@ -2570,37 +2570,92 @@ early_igg_by_cluster.data <-
 
 ```
 
-```{r Plot t-SNE across individuals at six months by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE across individuals at six months by cluster, fig.height = 9, fig.width = 8, messages = FALSE}
 
+individuals_in_high_cluster_at_6mo <-
+  antigens.df %>%
+    dplyr::filter(sero_age == "6 months" & cluster == "Infant high") %>%
+    dplyr::select(codenum) %>%
+    dplyr::distinct() %>%
+    dplyr::pull()
 
-# antigens.df %<>%
-#   dplyr::left_join(clustering_plot.df %>% dplyr::select(sero_specnum,cluster))
+samples_in_high_cluster_at_6mo_samples <-
+  antigens.df %>%
+    dplyr::filter(codenum %in% individuals_in_high_cluster_at_6mo) %>%
+    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+    dplyr::select(sero_specnum) %>%
+    dplyr::distinct() %>%
+    dplyr::pull()
 
-mid_igg.data <-
-  igg.data[,colnames(igg.data) %in% antigens.df$sero_specnum[antigens.df$sero_age %in% c("6 months","12 months","18 months","24 months")]]
+samples_in_low_cluster_at_6mo_samples <-
+  antigens.df %>%
+    dplyr::filter(!(codenum %in% individuals_in_high_cluster_at_6mo)) %>%
+    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+    dplyr::select(sero_specnum) %>%
+    dplyr::distinct() %>%
+    dplyr::pull()
 
-(all_individuals_mid_by_cluster <-
-  plot_tsne(t(mid_igg.data),
-            antigens.df[antigens.df$sero_age %in% c("6 months","12 months","18 months","24 months"),],
-            perplexity = 40,
-            match_by="sero_specnum",
-            colour_by="cluster",
-            group_by="codenum",
-            shape_by="sero_age",
-            group_min=2,
-            max_iter=5000) +
-  scale_shape_manual(values = sero_age_shapes, name = "Age") +
-  guides(colour = guide_legend(title.position = "top",
-                               title = "Cluster"),
-         shape = guide_legend(title.position = "top")) +
-  scale_colour_manual(values = cluster_palette,
-                      aesthetics = c("fill","colour"),
-                      drop = TRUE, limits = force,
-                      name = "Immune cluster")
+low_cluster_mid_igg.data <-
+  igg.data[,colnames(igg.data) %in% samples_in_low_cluster_at_6mo_samples]
+
+high_cluster_mid_igg.data <-
+  igg.data[,colnames(igg.data) %in% samples_in_high_cluster_at_6mo_samples]
+
+(low_cluster_individuals_mid_by_cluster <-
+            plot_tsne(t(low_cluster_mid_igg.data),
+                      antigens.df[antigens.df$sero_specnum %in% samples_in_low_cluster_at_6mo_samples,],
+                      perplexity = 40,
+                      match_by="sero_specnum",
+                      colour_by="cluster",
+                      group_by="codenum",
+                      shape_by="sero_age",
+                      group_min=2,
+                      max_iter=50000) +
+            scale_shape_manual(values = sero_age_shapes, name = "Age") +
+            guides(colour = guide_legend(title.position = "top",
+                                         title = "Cluster"),
+                   shape = guide_legend(title.position = "top")) +
+            scale_colour_manual(values = cluster_palette,
+                                aesthetics = c("fill","colour"),
+                                drop = TRUE, limits = force,
+                                name = "Immune cluster")
+          )
+
+(high_cluster_individuals_mid_by_cluster <-
+            plot_tsne(t(high_cluster_mid_igg.data),
+                      antigens.df[antigens.df$sero_specnum %in% samples_in_high_cluster_at_6mo_samples,],
+                      perplexity = 40,
+                      match_by="sero_specnum",
+                      colour_by="cluster",
+                      group_by="codenum",
+                      shape_by="sero_age",
+                      group_min=2,
+                      max_iter=50000) +
+            scale_shape_manual(values = sero_age_shapes, name = "Age") +
+            guides(colour = guide_legend(title.position = "top",
+                                         title = "Cluster"),
+                   shape = guide_legend(title.position = "top")) +
+            scale_colour_manual(values = cluster_palette,
+                                aesthetics = c("fill","colour"),
+                                drop = TRUE, limits = force,
+                                name = "Immune cluster")
 )
 
-# all_individuals_mid +
-#   ggrepel::geom_label_repel(data=. %>% dplyr::filter(sero_age == "6 months"), aes(label = codenum))
+cowplot::plot_grid(
+  plotlist = list(
+    cowplot::plot_grid(
+      plotlist = list(
+        low_cluster_individuals_mid_by_cluster + theme(legend.position = "none"),
+        high_cluster_individuals_mid_by_cluster + theme(legend.position = "none")
+      ),
+      ncol = 2,
+      labels = "auto"
+    ),
+    cowplot::get_legend(low_cluster_individuals_mid_by_cluster)
+  ),
+  nrow = 2,
+  rel_heights = c(1,0.1)
+)
 
 ```
 
