@@ -197,13 +197,13 @@ cluster_palette <-
 
 type_palette <- c(
   "non-ABT" = "#ADB6B6FF",
-  "Other ABT" = "#1B1919FF",
+  "Other ABT" = "#d4ac0d",
   "Degradative" = "#925E9FFF",
   "SBP" = "#EE4C97FF",
-  "Cell Wall" = "#42B540FF",
+  "Cell Wall" = "#ba4a00",
   "PBP" = "#20854EFF",
   "Cell Wall (not PBP)" = "#42B540FF",
-  "Adhesin" = "#E18727FF",
+  "Adhesin" = "#ff6e33",
   "PclA" = "#FDAF91FF",
   "Adhesin (not PclA)" = "#E18727FF",
   "PspA" = "#00468BFF",
@@ -2065,8 +2065,8 @@ ggplot(antigen_frequencies_in_population.df,
                             min.segment.length = 10,
                             inherit.aes = FALSE,
                             position = position_jitter(width = 0.1, seed = 42)) +
-  guides(colour = guide_legend(override.aes = list(size=1, alpha = 1)),
-         fill = guide_legend(override.aes = list(size=1, alpha = 1))) +
+  guides(colour = guide_legend(override.aes = list(size=2, alpha = 1)),
+         fill = guide_legend(override.aes = list(size=2, alpha = 1))) +
   theme(legend.position = "bottom")
 
 ```
@@ -4186,7 +4186,7 @@ ggplot(igg_prediction.df,
                   group = type),
               size = 1,
               inherit.aes = FALSE,
-              colour = "white") +
+              colour = "black") +
     facet_wrap(.~type,nrow = 2) +
     theme_bw() +
     scale_colour_manual(values = type_palette,
