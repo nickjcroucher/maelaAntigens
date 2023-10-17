@@ -5847,9 +5847,14 @@ ggplot(antigen_response_analysis.df %>%
          dplyr::distinct() %>%
          dplyr::mutate(Model = dplyr::if_else(Model == "Differential exposure",
                                               "Partial exposure",
-                                              Model)),
+                                              Model)) %>%
+         dplyr::group_by(type,Model) %>%
+         dplyr::mutate(first_value = dplyr::if_else(IgG_response == "6 months",IgG,NA_real_)) %>%
+         tidyr::fill(first_value) %>%
+         dplyr::mutate(adjusted_value = IgG - first_value) %>%
+         dplyr::ungroup(),
        aes(x = IgG_response,
-           y = IgG,
+           y = adjusted_value,
            colour = type,
            fill = type,
            shape = Model,
