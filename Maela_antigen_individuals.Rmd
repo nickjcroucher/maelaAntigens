@@ -469,14 +469,14 @@ translation.df <-
       dplyr::select(sero_specnum,codenum,category,sero_age,dob,specdate) %>%
       dplyr::mutate(category = factor(str_to_sentence(category),levels=c("Mother","Infant"))) %>%
       dplyr::mutate(sero_age = factor(dplyr::case_when(
-                                          sero_age == "DELIVERY" ~ "Cord",
-                                          sero_age == "0" ~ "Birth",
+                                          sero_age == "DELIVERY" ~ "Birth",
+                                          sero_age == "0" ~ "Cord",
                                           sero_age == "6" ~ "6 months",
                                           sero_age == "12" ~ "12 months",
                                           sero_age == "18" ~ "18 months",
                                           sero_age == "24" ~ "24 months"
                                      ),
-                                     levels = c("Cord","Birth","6 months","12 months","18 months","24 months")
+                                     levels = c("Birth","Cord","6 months","12 months","18 months","24 months")
                               )
                     ) %>%
       dplyr::arrange(codenum,category,specdate) %>%
@@ -4197,10 +4197,12 @@ sjPlot::tab_model(igg.model_1)
 ```{r Plot trends over time, fig.height = 8, fig.width = 8}
 
 igg_prediction.df <-
-  expand.grid("sero_age" = base::structure(c(1L,2L,3L,4L,5L,6L), levels = c("Cord", "Birth", "6 months", "12 months", "18 months", "24 months"), class = "factor"),
-              "type" = base::structure(c(2L, 1L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L), levels = c("non-ABT", 
-"Adhesin", "Other ABT", "Cell Wall", "Degradative", "SBP", "PspA", 
-"PspC", "ZmpA", "ZmpB"), class = "factor")
+  expand.grid("sero_age" = base::structure(c(1L,2L,3L,4L,5L,6L),
+                                           levels = c("Cord", "Birth", "6 months", "12 months", "18 months", "24 months"),
+                                           class = "factor"),
+              "type" = base::structure(c(2L, 1L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L),
+                                       levels = c("non-ABT", "Adhesin", "Other ABT", "Cell Wall", "Degradative", "SBP", "PspA", "PspC", "ZmpA", "ZmpB"),
+                                       class = "factor")
               )
 
 new_pred <- predict(igg.model_1, newdata = igg_prediction.df, re.form = NA)
@@ -5055,15 +5057,15 @@ early_sample_correlations.df <-
                        names_from = sero_age,
                        values_from = igg) %>%
     dplyr::group_by(antigen,type) %>%
-    dplyr::summarise(cor_birth = cor(Cord,Birth,
+    dplyr::summarise(cor_birth = cor(Birth,Cord,
                                use = "complete.obs"),
-                     cor_6mo = cor(Cord,`6 months`,
+                     cor_6mo = cor(Birth,`6 months`,
                                use = "complete.obs"),
-                     cor_12mo = cor(Cord,`12 months`,
+                     cor_12mo = cor(Birth,`12 months`,
                                use = "complete.obs"),
-                     cor_18mo = cor(Cord,`18 months`,
+                     cor_18mo = cor(Birth,`18 months`,
                                use = "complete.obs"),
-                     cor_24mo = cor(Cord,`24 months`,
+                     cor_24mo = cor(Birth,`24 months`,
                                use = "complete.obs"),
                      cor6to_12mo = cor(`6 months`,`12 months`,
                                use = "complete.obs"),
@@ -5152,7 +5154,7 @@ d_width = 0.75
                               ) +
     geom_hline(yintercept = 0, linetype = 4) +
     theme_bw() +
-    ylab("Pearson correlation coefficient with umbilical cord sample") +
+    ylab("Pearson correlation coefficient with maternal blood sample") +
     xlab("Comparator sample") +
     facet_wrap(.~type, nrow = 5) +
     theme(legend.position = "bottom",
@@ -5222,7 +5224,7 @@ outlier_labels_1b.df <-
     geom_hline(yintercept = 0, linetype = 2) +
     theme_bw() +
     xlab("Comparator sample") +
-    ylab("Pearson correlation coefficient with umbilical cord sample") +
+    ylab("Pearson correlation coefficient with 6 mo sample") +
     facet_wrap(.~type, nrow = 5) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           legend.position = "bottom",
@@ -5245,12 +5247,12 @@ plot_example_correlation <- function(antigen_name) {
   
   example_early_late_correlation.df <-
     antigen_exposure_response.df %>%
-      dplyr::filter(antigen == antigen_name & sero_age %in% c("Cord","18 months")) %>%
+      dplyr::filter(antigen == antigen_name & sero_age %in% c("Birth","18 months")) %>%
       dplyr::select(codenum,sero_age,igg) %>%
       tidyr::pivot_wider(id_cols = codenum, values_from = igg, names_from = sero_age)
 
   ggplot(example_early_late_correlation.df,
-         aes(x = Cord,
+         aes(x = Birth,
              y = `18 months`)) +
     geom_smooth(method = "lm") +
     stat_cor(method = "pearson",
@@ -5311,12 +5313,12 @@ maternal_levels_and_clusters.df <-
           dplyr::distinct(),
         by = c("codenum")
       ) %>%
-      tidyr::pivot_longer(cols = c(Cord,Birth,`6 months`,`12 months`,`18 months`,`24 months`),
+      tidyr::pivot_longer(cols = c(Birth,Cord,`6 months`,`12 months`,`18 months`,`24 months`),
                         names_to = "Age",
                         values_to = "igg"
       ) %>%
       dplyr::mutate(Age = factor(Age,
-                                 levels = c("Cord","Birth","6 months","12 months","18 months","24 months"))
+                                 levels = c("Birth","Cord","6 months","12 months","18 months","24 months"))
                     )
 
 cluster_test.df <-
@@ -5372,10 +5374,10 @@ inheritance_and_exposure.df <-
   antigen_exposure_response.df %>%
     dplyr::select(codenum,sero_specnum,cluster,antigen,type,sero_age,igg,SinceBirth,FirstSixMonths,LastSample,AnyLRTISinceLastSample,AnySevereLRTISinceLastSample,AnyVerySevereLRTISinceLastSample,AnyLRTIBeforeNextSample,AnySevereLRTIBeforeNextSample,AnyVerySevereLRTIBeforeNextSample) %>%
     dplyr::group_by(codenum) %>%
-    dplyr::mutate(Cord_IgG = dplyr::if_else(sero_age == 'Cord',igg,NA)) %>%
-    tidyr::fill(Cord_IgG, .direction = "updown") %>%
+    dplyr::mutate(Mat_IgG = dplyr::if_else(sero_age == 'Birth',igg,NA)) %>%
+    tidyr::fill(Mat_IgG, .direction = "updown") %>%
     dplyr::ungroup() %>%
-    dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months","24 months")) %>%
+    dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months","24 months")) %>%
     dplyr::mutate(SinceBirth = factor(SinceBirth,
                                       levels = c("NotExposedSinceBirth","ExposedSinceBirth")
                                       )
@@ -5389,7 +5391,7 @@ inheritance_and_exposure.df <-
                                       )
     ) %>%
     dplyr::filter(type != "non-ABT") %>%
-    dplyr::filter(!is.na(igg) & !is.na(Cord_IgG)) %>%
+    dplyr::filter(!is.na(igg) & !is.na(Mat_IgG)) %>%
     dplyr::group_by(antigen,sero_age) %>%
     dplyr::mutate(UnexposedCount = sum(SinceBirth == "NotExposedSinceBirth")) %>%
     dplyr::mutate(ExposedCount = sum(SinceBirth == "ExposedSinceBirth")) %>%
@@ -5449,7 +5451,7 @@ simple.antigen_model <-
        REML = FALSE)
 
 inheritance.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + (1|codenum) ,
        data = just_inheritance.df,
        REML = FALSE)
 
@@ -5458,17 +5460,17 @@ inheritance.antigen_model <-
 ```{r Fit models including exposure}
 
 inheritance_and_exposure_since_birth.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + (1|codenum) ,
        data = both_inheritance_and_exposure.df,
        REML = FALSE)
 
 inheritance_and_exposure_first_six_months.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + FirstSixMonths*antigen + Cord_IgG*antigen + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + FirstSixMonths*antigen + Mat_IgG*antigen + (1|codenum) ,
        data = both_inheritance_and_exposure.df,
        REML = FALSE)
 
 inheritance_and_exposure_last_six_months.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + LastSample*antigen + Cord_IgG*antigen + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + LastSample*antigen + Mat_IgG*antigen + (1|codenum) ,
        data = both_inheritance_and_exposure.df,
        REML = FALSE)
 
@@ -5517,7 +5519,7 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
 
     inheritance_and_exposure.coef <- as.data.frame(coef(ie.model)[[1]])
     base_inheritance_and_exposure_igg_level <- mean(inheritance_and_exposure.coef$`(Intercept)`)
-    base_inheritance_and_exposure_cord_correlation <- unique(inheritance_and_exposure.coef$Cord_IgG)
+    base_inheritance_and_exposure_mat_correlation <- unique(inheritance_and_exposure.coef$Mat_IgG)
     base_inheritance_and_exposure_since_birth <- unique(inheritance_and_exposure.coef$SinceBirthExposedSinceBirth)
     
     #base_inheritance_and_exposure_6_months <- unique(inheritance_and_exposure.coef$`sero_age6 months`) # Now included in intercept
@@ -5527,7 +5529,7 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
     
     inheritance.coef <- as.data.frame(coef(i.model)[[1]])
     base_inheritance_igg_level <- mean(inheritance.coef$`(Intercept)`)
-    base_inheritance_cord_correlation <- unique(inheritance.coef$Cord_IgG)
+    base_inheritance_mat_correlation <- unique(inheritance.coef$Mat_IgG)
     #base_inheritance_6_months <- unique(inheritance.coef$`sero_age6 months`) # Now included in intercept
     base_inheritance_12_months <- unique(inheritance.coef$`sero_age12 months`)
     base_inheritance_18_months <- unique(inheritance.coef$`sero_age18 months`)
@@ -5571,17 +5573,17 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
           dplyr::left_join(
               # Factors for inheritance of IgG levels
               inheritance_and_exposure.coef %>%
-                dplyr::select(dplyr::ends_with(':Cord_IgG')) %>%
+                dplyr::select(dplyr::ends_with(':Mat_IgG')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
-                                    values_to = "IgG_in_cord") %>%
+                                    values_to = "IgG_in_mother") %>%
                 dplyr::mutate(antigen = gsub("antigen",
                                              "",
-                                             gsub(":Cord_IgG",
+                                             gsub(":Mat_IgG",
                                                   "",
                                                   variable))) %>%
                 dplyr::distinct() %>%
-                dplyr::mutate(IgG_in_cord = IgG_in_cord + base_inheritance_and_exposure_cord_correlation) %>%
+                dplyr::mutate(IgG_in_mother = IgG_in_mother + base_inheritance_and_exposure_mat_correlation) %>%
                 dplyr::select(-variable),
             by = c("antigen")
           ) %>%
@@ -5632,7 +5634,7 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
           dplyr::left_join(
               # Responses by antigen
               inheritance_and_exposure.coef %>%
-                dplyr::select(dplyr::starts_with('antigen') & !dplyr::ends_with('SinceBirthExposedSinceBirth') & !dplyr::ends_with('Cord_IgG')) %>%
+                dplyr::select(dplyr::starts_with('antigen') & !dplyr::ends_with('SinceBirthExposedSinceBirth') & !dplyr::ends_with('Mat_IgG')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
                                     values_to = "antigen_response") %>%
@@ -5650,7 +5652,7 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
             IgG_After_Exposure = base_inheritance_and_exposure_since_birth,
             antigen = ie.model@frame$antigen[1],
             type = ie.model@frame$type[1],
-            IgG_in_cord = base_inheritance_and_exposure_cord_correlation,
+            IgG_in_mother = base_inheritance_and_exposure_mat_correlation,
             `6 months` = as.numeric(inheritance_and_exposure_types.df[inheritance_and_exposure_types.df$type==ie.model@frame$type[1],1]) + base_inheritance_and_exposure_igg_level,
             `12 months` = as.numeric(inheritance_and_exposure_types.df[inheritance_and_exposure_types.df$type==ie.model@frame$type[1],1]) +
               as.numeric(inheritance_and_exposure.coef[1,colnames(inheritance_and_exposure.coef) == paste0("sero_age12 months:type",ie.model@frame$type[1])]) +
@@ -5671,7 +5673,7 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                                        `18 months`,
                                        `24 months`,
                                        antigen_response,
-                                       IgG_in_cord,
+                                       IgG_in_mother,
                                        IgG_After_Exposure),
                               names_to = "IgG_response",
                               values_to = "IgG") %>%
@@ -5681,17 +5683,17 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
         ################################################
         inheritance.coef %>%
           # Get cord correlation
-          dplyr::select(dplyr::ends_with(':Cord_IgG')) %>%
+          dplyr::select(dplyr::ends_with(':Mat_IgG')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
-                                    values_to = "IgG_in_cord") %>%
+                                    values_to = "IgG_in_mother") %>%
                 dplyr::mutate(antigen = gsub("antigen",
                                              "",
-                                             gsub(":Cord_IgG",
+                                             gsub(":Mat_IgG",
                                                   "",
                                                   variable))) %>%
                 dplyr::distinct() %>%
-                dplyr::mutate(IgG_in_cord = IgG_in_cord + base_inheritance_cord_correlation) %>%
+                dplyr::mutate(IgG_in_mother = IgG_in_mother + base_inheritance_mat_correlation) %>%
                 dplyr::select(-variable) %>%
           
           dplyr::left_join(
@@ -5748,7 +5750,7 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
           dplyr::left_join(
               # Responses by antigen
               inheritance.coef %>%
-                dplyr::select(dplyr::starts_with('antigen') & !dplyr::ends_with('Cord_IgG')) %>%
+                dplyr::select(dplyr::starts_with('antigen') & !dplyr::ends_with('Mat_IgG')) %>%
                 tidyr::pivot_longer(cols = everything(),
                                     names_to = "variable",
                                     values_to = "antigen_response") %>%
@@ -5765,7 +5767,7 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
           tibble::add_row(
             antigen = i.model@frame$antigen[1],
             type = i.model@frame$type[1],
-            IgG_in_cord = base_inheritance_cord_correlation,
+            IgG_in_mother = base_inheritance_mat_correlation,
             `6 months` = as.numeric(inheritance_types.df[inheritance_types.df$type==i.model@frame$type[1],1]) +
               base_inheritance_igg_level,
             `12 months` = ifelse(
@@ -5805,14 +5807,14 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                                        `18 months`,
                                        `24 months`,
                                        antigen_response,
-                                       IgG_in_cord),
+                                       IgG_in_mother),
                               names_to = "IgG_response",
                               values_to = "IgG") %>%
           dplyr::mutate(Model = "Universal exposure")
       ) %>%
       dplyr::mutate(IgG_response = dplyr::case_when(
                       IgG_response == "antigen_response" ~ "Binding to protein type",
-                      IgG_response == "IgG_in_cord" ~ "Correlation with cord sample",
+                      IgG_response == "IgG_in_mother" ~ "Correlation with maternal blood sample",
                       IgG_response == "IgG_After_Exposure" ~ "Change after exposure",
                       TRUE ~ IgG_response
                     )
@@ -5823,7 +5825,7 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                                                      "18 months",
                                                      "24 months",
                                                      "Binding to protein type",
-                                                     "Correlation with cord sample",
+                                                     "Correlation with maternal blood sample",
                                                      "Change after exposure")
                                           )
                     )
@@ -5844,10 +5846,10 @@ exposure_outlier_labels.df <-
 (modelling_response_after_exposure_plot <-
   ggplot(antigen_response_analysis.df %>%
            tidyr::pivot_wider(id_cols = c(antigen,Model,type), names_from = IgG_response, values_from = IgG) %>%
-           dplyr::mutate(age_specific_response = `24 months` + `Binding to protein type`) %>%
+           dplyr::mutate(`Response at 24 mo` = `24 months` + `Binding to protein type`) %>%
            tidyr::pivot_longer(cols = -c(antigen,Model,type), names_to = "IgG_response", values_to = "IgG") %>%
-           dplyr::filter(IgG_response %in% c("age_specific_response",
-                                                   "Correlation with cord sample",
+           dplyr::filter(IgG_response %in% c("Response at 24 mo",
+                                                   "Correlation with maternal blood sample",
                                                    "Change after exposure")) %>%
          dplyr::mutate(Model = dplyr::if_else(Model == "Differential exposure",
                                               "Partial exposure",
@@ -6004,18 +6006,18 @@ ggplot(inheritance_and_exposure_with_predictions.df,
 
 check_analysis.df <-
   inheritance_and_exposure_with_predictions.df %>%
-    dplyr::select(codenum,sero_specnum,antigen,type,sero_age,igg,predicted,Exposed,SinceBirth,Cord_IgG) %>%
+    dplyr::select(codenum,sero_specnum,antigen,type,sero_age,igg,predicted,Exposed,SinceBirth,Mat_IgG) %>%
     dplyr::mutate(Model = paste(Exposed,"exposure")) %>%
     # Age factor
     dplyr::left_join(antigen_response_analysis.df %>%
                        dplyr::select(antigen,IgG_response,IgG) %>%
                        dplyr::rename(age_contribution = IgG),
                      by = c("antigen","sero_age"="IgG_response")) %>%
-    # Cord contribution
+    # Maternal contribution
     dplyr::left_join(antigen_response_analysis.df %>%
-                       dplyr::filter(IgG_response == "Correlation with cord sample") %>%
+                       dplyr::filter(IgG_response == "Correlation with maternal blood sample") %>%
                        dplyr::select(antigen,IgG) %>%
-                       dplyr::rename(cord_correlation = IgG),
+                       dplyr::rename(mat_correlation = IgG),
                      by = c("antigen")) %>%
     # Type contribution
     dplyr::left_join(antigen_response_analysis.df %>%
@@ -6039,7 +6041,7 @@ check_analysis.df <-
                   averaged_inheritance_exposure = mean(individuals_model_comparisons.df$Inheritance_exposure)) %>%
     dplyr::ungroup() %>%
     # Calculate prediction
-    dplyr::mutate(combined_prediction = age_contribution + antigen_effect + Cord_IgG*cord_correlation) %>%
+    dplyr::mutate(combined_prediction = age_contribution + antigen_effect + Mat_IgG*mat_correlation) %>%
     dplyr::mutate(combined_prediction = dplyr::if_else(SinceBirth == "ExposedSinceBirth",
                                                        combined_prediction+exposure_effect,
                                                        combined_prediction)
@@ -6242,7 +6244,7 @@ zmpB_summary.df <-
     tidyr::pivot_wider(id_cols = c(codenum,type),names_from = sero_age,values_from = `Mean IgG`)
 
 ggplot(zmpB_summary.df,
-       aes(x = Cord,
+       aes(x = Birth,
            y = `6 months`,
            colour = type,
            fill = type)) +
@@ -6251,7 +6253,7 @@ ggplot(zmpB_summary.df,
                       aesthetics = c("fill","colour"),
                       drop = TRUE, limits = force,
                       name = "Protein type") +
-  xlab(expression('Mean IgG binding level in cord sample (log'[2]~'change in fluorescence)')) +
+  xlab(expression('Mean IgG binding level in birth sample (log'[2]~'change in fluorescence)')) +
   ylab(expression('Mean IgG binding level at 6 mo (log'[2]~'change in fluorescence)')) +
   geom_smooth(method = "lm") +
   stat_cor(label.y = 6.5) +
@@ -7901,32 +7903,32 @@ both_inheritance_and_exposure.df %<>%
                    by = c("sero_specnum"))
 
 inheritance.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + (1|codenum) ,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
       REML = FALSE)
 
 inheritance.protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) ,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
       REML = FALSE)
 
 inheritance.type_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) ,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
       REML = FALSE)
 
 inheritance_and_exposure_since_birth.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + (1|codenum) ,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnyLRTISinceLastSample + (1|codenum) ,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.type_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) ,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnyLRTISinceLastSample*type + (1|codenum) ,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
@@ -7974,7 +7976,7 @@ exposure_protection_outlier_labels.df <-
 (modelling_response_protection_after_exposure_plot <-
   ggplot(antigen_response_protection_analysis.df %>%
            dplyr::filter(IgG_response %in% c("Binding to protein type",
-                                                   "Correlation with cord sample",
+                                                   "Correlation with maternal blood sample",
                                                    "Change after exposure")) %>%
          dplyr::mutate(Model = dplyr::if_else(Model == "Differential exposure",
                                               "Partial exposure",
@@ -8283,7 +8285,7 @@ cowplot::plot_grid(
 
 early_diagnosis.df <-
   antigen_exposure_response.df %>%
-    dplyr::filter(sero_age %in% c("Cord") & type != "non-ABT") %>%
+    dplyr::filter(sero_age %in% c("Birth") & type != "non-ABT") %>%
     dplyr::select(sero_specnum,sero_age,codenum,antigen,type,igg) %>%
     dplyr::distinct() %>%
     dplyr::left_join(colonisation_by_sero_code.df %>%
@@ -8381,7 +8383,7 @@ ggplot(maternal_protection.df,
   geom_point() +
   geom_errorbar(width = 0.05) +
   xlab("Diagnosis in first six months of child's life") +
-  ylab(expression('Relative IgG binding in cord sample (log'[2]~'change in fluorescence)')) +
+  ylab(expression('Relative IgG binding in maternal blood sample (log'[2]~'change in fluorescence)')) +
   geom_hline(yintercept = 0, linetype = 2) +
   theme_bw()
 
