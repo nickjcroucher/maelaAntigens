@@ -5379,11 +5379,13 @@ both_inheritance_and_exposure.antigen_list <-
 
 both_inheritance_and_exposure.df <-
   inheritance_and_exposure.df %>%
-    dplyr::filter(antigen %in% both_inheritance_and_exposure.antigen_list)
+    dplyr::filter(antigen %in% both_inheritance_and_exposure.antigen_list) %>%
+    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months"))
 
 just_inheritance.df <-
   inheritance_and_exposure.df %>%
-    dplyr::filter(!(antigen %in% both_inheritance_and_exposure.antigen_list))
+    dplyr::filter(!(antigen %in% both_inheritance_and_exposure.antigen_list) & ExposedCount > 1) %>%  # Exclude ZmpE
+    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months"))
 
 simple.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + (1|codenum) ,
@@ -5556,13 +5558,14 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                   `12 months` = 0,
                   `18 months` = 0,
                   `24 months` = 0
-                ) %>%
-                dplyr::mutate(
+                ),
+              by = c("type")
+          ) %>%
+          dplyr::mutate_at(vars(dplyr::ends_with("months")), ~replace_na(.,0)) %>% # Fill in missing estimates
+          dplyr::mutate(
                   `12 months` = `12 months` + base_inheritance_and_exposure_12_months,
                   `18 months` = `18 months` + base_inheritance_and_exposure_18_months,
                   `24 months` = `24 months` + base_inheritance_and_exposure_24_months,
-                ),
-              by = c("type")
           ) %>%
           # Add baseline to timepoints
           dplyr::mutate(
@@ -5586,6 +5589,27 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
             by = c("antigen")
           ) %>%
           dplyr::mutate(antigen_response = dplyr::if_else(is.na(antigen_response),0,antigen_response)) %>% # For each type there is an undefined reference level antigen
+          # Add reference antigen
+          tibble::add_row(
+            IgG_After_Exposure = base_inheritance_and_exposure_since_birth,
+            antigen = ie.model@frame$antigen[1],
+            type = ie.model@frame$type[1],
+            IgG_in_cord = base_inheritance_and_exposure_cord_correlation,
+            `6 months` = as.numeric(inheritance_and_exposure_types.df[inheritance_and_exposure_types.df$type==ie.model@frame$type[1],1]) + base_inheritance_and_exposure_igg_level,
+            `12 months` = as.numeric(inheritance_and_exposure_types.df[inheritance_and_exposure_types.df$type==ie.model@frame$type[1],1]) +
+              as.numeric(inheritance_and_exposure.coef[1,colnames(inheritance_and_exposure.coef) == paste0("sero_age12 months:type",ie.model@frame$type[1])]) +
+              base_inheritance_and_exposure_igg_level + 
+              base_inheritance_and_exposure_12_months,
+            `18 months` = as.numeric(inheritance_and_exposure_types.df[inheritance_and_exposure_types.df$type==ie.model@frame$type[1],1]) +
+              as.numeric(inheritance_and_exposure.coef[1,colnames(inheritance_and_exposure.coef) == paste0("sero_age18 months:type",ie.model@frame$type[1])]) +
+              base_inheritance_and_exposure_igg_level + 
+              base_inheritance_and_exposure_18_months,
+            `24 months` = as.numeric(inheritance_and_exposure_types.df[inheritance_and_exposure_types.df$type==ie.model@frame$type[1],1]) +
+              as.numeric(inheritance_and_exposure.coef[1,colnames(inheritance_and_exposure.coef) == paste0("sero_age24 months:type",ie.model@frame$type[1])]) +
+              base_inheritance_and_exposure_igg_level +
+              base_inheritance_and_exposure_24_months,
+            antigen_response = 0
+          ) %>%
           tidyr::pivot_longer(cols = c(`6 months`,
                                        `12 months`,
                                        `18 months`,
@@ -5650,13 +5674,14 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
                   `12 months` = 0,
                   `18 months` = 0,
                   `24 months` = 0
-                ) %>%
-                dplyr::mutate(
+                ),
+              by = c("type")
+          ) %>%
+          dplyr::mutate_at(vars(dplyr::ends_with("months")), ~replace_na(.,0)) %>% # Fill in missing estimates
+          dplyr::mutate(
                   `12 months` = `12 months` + base_inheritance_12_months,
                   `18 months` = `18 months` + base_inheritance_18_months,
                   `24 months` = `24 months` + base_inheritance_24_months,
-                ),
-              by = c("type")
           ) %>%
           # Add baseline to timepoints
           dplyr::mutate(
@@ -5680,6 +5705,45 @@ combine_exposure_model_outputs <- function(i.model, ie.model) {
             by = c("antigen")
           ) %>%
           dplyr::mutate(antigen_response = dplyr::if_else(is.na(antigen_response),0,antigen_response)) %>% # For each type there is an undefined reference level antigen
+          # Add reference antigen
+          tibble::add_row(
+            antigen = i.model@frame$antigen[1],
+            type = i.model@frame$type[1],
+            IgG_in_cord = base_inheritance_cord_correlation,
+            `6 months` = as.numeric(inheritance_types.df[inheritance_types.df$type==i.model@frame$type[1],1]) +
+              base_inheritance_igg_level,
+            `12 months` = ifelse(
+              i.model@frame$type[1] == "Adhesin",
+              as.numeric(inheritance_types.df[inheritance_types.df$type==i.model@frame$type[1],1]) +
+              base_inheritance_igg_level +
+              base_inheritance_12_months,
+              as.numeric(inheritance_types.df[inheritance_types.df$type==i.model@frame$type[1],1]) +
+              as.numeric(inheritance.coef[1,colnames(inheritance.coef) == paste0("sero_age12 months:type",i.model@frame$type[1])]) +
+              base_inheritance_igg_level +
+              base_inheritance_12_months
+            ),
+            `18 months` = ifelse(
+              i.model@frame$type[1] == "Adhesin",
+              as.numeric(inheritance_types.df[inheritance_types.df$type==i.model@frame$type[1],1]) +
+              base_inheritance_igg_level +
+              base_inheritance_18_months,
+              as.numeric(inheritance_types.df[inheritance_types.df$type==i.model@frame$type[1],1]) +
+              as.numeric(inheritance.coef[1,colnames(inheritance.coef) == paste0("sero_age18 months:type",i.model@frame$type[1])]) +
+              base_inheritance_igg_level +
+              base_inheritance_18_months
+            ),
+            `24 months` = ifelse(
+              i.model@frame$type[1] == "Adhesin",
+              as.numeric(inheritance_types.df[inheritance_types.df$type==i.model@frame$type[1],1]) +
+              base_inheritance_igg_level +
+              base_inheritance_24_months,
+              as.numeric(inheritance_types.df[inheritance_types.df$type==i.model@frame$type[1],1]) +
+              as.numeric(inheritance.coef[1,colnames(inheritance.coef) == paste0("sero_age24 months:type",i.model@frame$type[1])]) +
+              base_inheritance_igg_level +
+              base_inheritance_24_months
+            ),
+            antigen_response = 0
+          ) %>%
           tidyr::pivot_longer(cols = c(`6 months`,
                                        `12 months`,
                                        `18 months`,
@@ -5832,12 +5896,13 @@ inheritance_and_exposure_predictions <- predict(inheritance_and_exposure_since_b
 
 inheritance_and_exposure_with_predictions.df <-
   inheritance_and_exposure.df %>%
+      dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
       dplyr::mutate(Exposed = dplyr::if_else(antigen %in% both_inheritance_and_exposure.antigen_list,
                                                   "Partial",
                                                   "Universal"
                                                   )
                     ) %>%
-      dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+      dplyr::filter(Exposed == "Partial" | ExposedCount > 1) %>% # Get rid of ZmpE etc.
       dplyr::group_by(Exposed) %>%
       dplyr::mutate(index=row_number()) %>%
       dplyr::ungroup() %>%
@@ -5904,9 +5969,25 @@ check_analysis.df <-
                        dplyr::rename(exposure_effect = IgG),
                      by = c("antigen")) %>%
     dplyr::mutate(exposure_effect = dplyr::if_else(is.na(exposure_effect),0,exposure_effect)) %>%
+    # Add individual effects
+    dplyr::left_join(individuals_model_comparisons.df,
+                     by = c("codenum"="Individual")) %>%
+    # Remove aggregated individual effect
+    dplyr::group_by(Model) %>%
+    dplyr::mutate(averaged_inheritance = mean(individuals_model_comparisons.df$Inheritance),
+                  averaged_inheritance_exposure = mean(individuals_model_comparisons.df$Inheritance_exposure)) %>%
+    dplyr::ungroup() %>%
     # Calculate prediction
     dplyr::mutate(combined_prediction = age_contribution + antigen_effect + Cord_IgG*cord_correlation) %>%
-    dplyr::mutate(combined_prediction = dplyr::if_else(SinceBirth == "ExposedSinceBirth",combined_prediction+exposure_effect,combined_prediction))
+    dplyr::mutate(combined_prediction = dplyr::if_else(SinceBirth == "ExposedSinceBirth",
+                                                       combined_prediction+exposure_effect,
+                                                       combined_prediction)
+    ) %>%
+    dplyr::mutate(combined_prediction = dplyr::if_else(Model == "Partial exposure",
+                                                       combined_prediction+Inheritance_exposure-averaged_inheritance_exposure,
+                                                       combined_prediction+Inheritance-averaged_inheritance)
+    ) %>%
+    dplyr::mutate(residual = abs(combined_prediction - predicted))
     
 ggplot(check_analysis.df,
        aes(x = predicted,
