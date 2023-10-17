@@ -200,9 +200,9 @@ type_palette <- c(
   "Other ABT" = "#1B1919FF",
   "Degradative" = "#925E9FFF",
   "SBP" = "#EE4C97FF",
-  "CellWall" = "#42B540FF",
+  "Cell Wall" = "#42B540FF",
   "PBP" = "#20854EFF",
-  "CellWall (not PBP)" = "#42B540FF",
+  "Cell Wall (not PBP)" = "#42B540FF",
   "Adhesin" = "#E18727FF",
   "PclA" = "#FDAF91FF",
   "Adhesin (not PclA)" = "#E18727FF",
@@ -1977,9 +1977,9 @@ antigens.df <-
     dplyr::left_join(antigen_classification.df, by = c("antigen")) %>%
     dplyr::mutate(type = dplyr::case_when(
                         antigen == "CBD" ~ "Adhesin",
-                        antigen == "PhageAmi" ~ "CellWall",
+                        antigen == "PhageAmi" ~ "Cell Wall",
                         antigen == "ZmpE" ~ "Degradative",
-                        antigen == "LytA" ~ "CellWall",
+                        antigen == "LytA" ~ "Cell Wall",
                         antigen == "PblB" ~ "Adhesin",
                         TRUE ~ type
                       )
@@ -1993,7 +1993,7 @@ antigens.df <-
     # Change type ordering
     dplyr::mutate(type = factor(type,
                                 levels = c("Adhesin",
-                                           "CellWall",
+                                           "Cell Wall",
                                            "Degradative",
                                            "SBP",
                                            "PspA",
@@ -2123,7 +2123,7 @@ pclA_alleles <- c("CLS01333", "CLS99466", "CLS03178", "CLS03616", "CLS03265")
               dplyr::distinct() %>%
               dplyr::mutate(type = dplyr::case_when(
                                 antigen %in% pbp_alleles ~ "PBP",
-                                type == "CellWall" ~ "CellWall (not PBP)",
+                                type == "Cell Wall" ~ "Cell Wall (not PBP)",
                                 antigen %in% pclA_alleles ~ "PclA",
                                 type == "Adhesin" ~ "Adhesin (not PclA)",
                                 TRUE ~ type
@@ -4084,7 +4084,7 @@ mef_input.df <-
                                 levels = c("non-ABT",
                                            "Adhesin",
                                            "Other ABT",
-                                           "CellWall",
+                                           "Cell Wall",
                                            "Degradative",
                                            "SBP",
                                            "PspA",
@@ -4143,7 +4143,7 @@ sjPlot::tab_model(igg.model_1)
 igg_prediction.df <-
   expand.grid("sero_age" = base::structure(c(1L,2L,3L,4L,5L,6L), levels = c("Cord", "Birth", "6 months", "12 months", "18 months", "24 months"), class = "factor"),
               "type" = base::structure(c(2L, 1L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L), levels = c("non-ABT", 
-"Adhesin", "Other ABT", "CellWall", "Degradative", "SBP", "PspA", 
+"Adhesin", "Other ABT", "Cell Wall", "Degradative", "SBP", "PspA", 
 "PspC", "ZmpA", "ZmpB"), class = "factor")
               )
 
@@ -4369,7 +4369,7 @@ mef_input_with_clustering.df <-
                                 levels = c("non-ABT",
                                            "Adhesin",
                                            "Other ABT",
-                                           "CellWall",
+                                           "Cell Wall",
                                            "Degradative",
                                            "SBP",
                                            "PspA",
@@ -4546,7 +4546,7 @@ ggplot(inheritance_and_exposure_with_predictions.df,
 igg_prediction_with_clustering.df <-
   expand.grid("sero_age" = base::structure(1:6, levels = c("Cord", "Birth", "6 months", "12 months", "18 months", "24 months"), class = "factor"),
               "type" = base::structure(c(2L, 1L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L), levels = c("non-ABT", 
-"Adhesin", "Other ABT", "CellWall", "Degradative", "SBP", "PspA", 
+"Adhesin", "Other ABT", "Cell Wall", "Degradative", "SBP", "PspA", 
 "PspC", "ZmpA", "ZmpB"), class = "factor"),
               "cluster" = c("Neonatal highest", "Neonatal infant-like", "Neonatal intermediate", "Neonatal lowest", 
 "Infant high", "Infant low")
@@ -6327,7 +6327,7 @@ plot_umap <- function(mat,df,perplexity = 40,match_by=NULL,colour_by=NULL,group_
               dplyr::distinct() %>%
               dplyr::mutate(type = dplyr::case_when(
                                 antigen %in% pbp_alleles ~ "PBP",
-                                type == "CellWall" ~ "CellWall (not PBP)",
+                                type == "Cell Wall" ~ "Cell Wall (not PBP)",
                                 antigen %in% pclA_alleles ~ "PclA",
                                 type == "Adhesin" ~ "Adhesin (not PclA)",
                                 TRUE ~ type
@@ -8999,7 +8999,7 @@ ggplot(antigen_exposure_response.df %>%
 cowplot::plot_grid(
   plotlist = list(
     ggplot(antigen_exposure_response.df %>%
-         dplyr::filter(type == "CellWall") %>%
+         dplyr::filter(type == "Cell Wall") %>%
          dplyr::group_by(sero_age,type) %>%
          dplyr::mutate(mean_change = mean(igg_delta)) %>%
          dplyr::ungroup(),
