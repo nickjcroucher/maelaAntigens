@@ -1953,7 +1953,7 @@ antigen_classification.df <-
   dplyr::mutate(type = dplyr::case_when(
                     classification == "non-ABT" ~ "non-ABT",
                     classification == "ABT" & type == "COG" ~ "Other ABT",
-                    classification == "CellWall" ~ "Cell Wall",
+                    type == "CellWall" ~ "Cell Wall",
                     TRUE ~ type
                   )
                 )
