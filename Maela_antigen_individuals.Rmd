@@ -8025,73 +8025,73 @@ exposure_protection_outlier_labels.df <-
 
 # Post-diagnosis IgG levels
 inheritance.severe_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
       REML = FALSE)
 
 inheritance.very_severe_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
       REML = FALSE)
 
 inheritance_and_exposure_since_birth.severe_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnySevereLRTISinceLastSample + (1|codenum) + 0,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.very_severe_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnyVerySevereLRTISinceLastSample + (1|codenum) + 0,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.colonisation_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Colonisation_freq + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*Colonisation_freq + (1|codenum) + 0,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance.colonisation_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Colonisation_freq + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*Colonisation_freq + (1|codenum) + 0,
        data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 # Pre-diagnosis IgG levels
 inheritance.protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) + 0,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
       REML = FALSE)
 
 inheritance_and_exposure_since_birth.protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) + 0,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
        REML = FALSE)
 
 inheritance.severe_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) + 0,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
       REML = FALSE)
 
 inheritance.very_severe_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) + 0,
       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
       REML = FALSE)
 
 inheritance_and_exposure_since_birth.severe_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) + 0,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.very_severe_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) + 0,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.colonisation_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) + 0,
        data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
        REML = FALSE)
 
 inheritance.colonisation_protection.prior_protection.antigen_model <-
-  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Cord_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) + 0,
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) + 0,
        data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
        REML = FALSE)
 
@@ -9215,4 +9215,14 @@ tibble(
 
 
 ```
+
+# Negative control
+
+``` {Plot hmAb data}
+
+
+
+```
+
+
 
