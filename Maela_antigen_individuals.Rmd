@@ -9218,9 +9218,67 @@ tibble(
 
 # Negative control
 
-``` {Plot hmAb data}
+``` {Plot hmAb data, fig.height = 8, fig.width = 8}
 
+hmab.df <-
+  read.csv(archive::archive_read("DataMatrix_HuMabs_Zmp.csv.tar.gz")) %>%
+    tidyr::pivot_longer(dplyr::starts_with("IC.hmAb"),names_to = "hmAb",values_to = "MFI") %>%
+    dplyr::mutate(log2_MFI = log(MFI,2)) %>%
+    dplyr::group_by(ID,hmAb) %>%
+    dplyr::mutate(median_log2_MFI = median(log2_MFI)) %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(hmAb) %>%
+    dplyr::mutate(background = dplyr::if_else(ID=="Negative Control",median_log2_MFI,NA_real_)) %>%
+    tidyr::fill(background) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(ID != "Negative Control") %>%
+    dplyr::mutate(igg = log2_MFI - background) %>%
+    dplyr::mutate(probe_type = dplyr::case_when(
+                      grepl("zmpA",ID) & grepl("s1",ID) ~ "ZmpA N terminus",
+                      grepl("zmpA",ID) & grepl("s2",ID) ~ "ZmpA middle",
+                      grepl("zmpA",ID) & grepl("s3",ID) ~ "ZmpA C terminus",
+                      grepl("zmpB",ID) & grepl("s1",ID) ~ "ZmpB N terminus",
+                      grepl("zmpB",ID) & grepl("s2",ID) ~ "ZmpB middle",
+                      grepl("zmpB",ID) & grepl("s3",ID) ~ "ZmpB C terminus",
+                      grepl("zmpD",ID) & grepl("s1",ID) ~ "ZmpD N terminus",
+                      grepl("zmpD",ID) & grepl("s2",ID) ~ "ZmpD middle",
+                      grepl("zmpD",ID) & grepl("s3",ID) ~ "ZmpD C terminus",
+                      grepl("zmpC",ID) & grepl("s1",ID) ~ "ZmpC N terminus",
+                      grepl("zmpC",ID) & grepl("s2",ID) ~ "ZmpC middle",
+                      grepl("zmpC",ID) & grepl("s3",ID) ~ "ZmpC C terminus",
+                      grepl("zmpA",ID) ~ "ZmpA complete",
+                      grepl("zmpB",ID) ~ "ZmpB complete",
+                      grepl("zmpD",ID) ~ "ZmpD complete",
+                      grepl("zmpC",ID) ~ "ZmpC complete",
+                      TRUE ~ "Other"
+                    )
+                  ) %>%
+    dplyr::mutate(zmp = dplyr::case_when(
+                      grepl("ZmpA",probe_type) ~ "ZmpA",
+                      grepl("ZmpB",probe_type) ~ "ZmpB",
+                      grepl("ZmpD",probe_type) ~ "ZmpD",
+                      grepl("ZmpC",probe_type) ~ "ZmpC",
+                      TRUE ~ "Other"
+                    )
+                  ) %>%
+    dplyr::filter(probe_type != "Other")
 
+ggplot(hmab.df,
+       aes(x = probe_type,
+           y = igg,
+           colour = zmp)) +
+  geom_point(position = position_jitter(width = 0.2)) +
+  geom_violin(alpha = 0,
+              draw_quantiles = c(0.5),
+              colour = "black") +
+  scale_colour_manual(values = c(type_palette,"ZmpC"="magenta"),
+                        aesthetics = c("fill","colour"),
+                        drop = TRUE, limits = force,
+                        name = "Protein type") +
+  ylab(expression('Array measurement of IgG binding (log'[2]~'change in fluorescence)')) +
+  xlab("Probe type") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
 ```
 
