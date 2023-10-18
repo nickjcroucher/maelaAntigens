@@ -48,7 +48,8 @@ require(sjPlot)
 require(moments)
 require(umap)
 require(archive)
-
+require(ggmsa)
+require(ggplotify)
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
@@ -9282,5 +9283,24 @@ ggplot(hmab.df,
 
 ```
 
+# Display ZmpB alignment
+
+``` {r ZmpB alignment, fig.width = 8, fig.height = 11}
+
+zmpB.aa <- file.path(paste0(getwd(),"/ZmpB_complete.aln"))
+chunk_size = 100
+msa_plot_list <- list()
+
+for (i in 1:4) {
+  msa_plot_list[[i]] <- ggplotify::as.ggplot(ggmsa(zmpB.aa, (i-1)*chunk_size+1, i*chunk_size+1, char_width = 0.5) + geom_msaBar())
+}
+
+cowplot::plot_grid(
+  plotlist = msa_plot_list,
+  nrow = 4,
+  ncol = 1
+)
+
+```
 
 
