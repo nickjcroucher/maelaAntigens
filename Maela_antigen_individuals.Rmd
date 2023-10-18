@@ -9014,7 +9014,7 @@ elisa_with_predictions.df <-
     dplyr::mutate(predicted = predict(elisa_model))
 
 elisa_cluster_ratio.df <-
-  elisa_with_preddictions.df %>%
+  elisa_with_predictions.df %>%
     dplyr::distinct() %>%
     dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
     dplyr::filter(cluster %in% c("Infant high","Infant low")) %>%
