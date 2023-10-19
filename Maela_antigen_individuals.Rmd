@@ -7246,8 +7246,8 @@ zmpB_max.df <-
                           drop = TRUE, limits = force,
                           name = "Protein type") +
     scale_shape_manual(values = sero_age_shapes, name = "Age") +
-    ylab(expression('IgG binding to ZmpB N terminal probe (log'[2]~'change in fluorescence)')) +
-    xlab(expression('Maximum IgG binding across all probes (log'[2]~'change in fluorescence)')) +
+    ylab(expression(atop('IgG binding to ZmpB N terminal probe','(log'[2]~'change in fluorescence)'))) +
+    xlab(expression(atop('Maximum IgG binding across all probes','(log'[2]~'change in fluorescence)'))) +
     theme_bw() +
     theme(legend.position = "none")
 )
@@ -7331,21 +7331,23 @@ ggplot(max_probe_binding,
 
 ``` {r Plot frequencies of top hits}
 
-ggplot(max_probe_binding %>%
-         dplyr::select(`Probe type`,Protein,sero_age,Frequency) %>%
-         dplyr::distinct(),
-       aes(x = reorder(`Probe type`,-Frequency),
-           y = Frequency,
-           colour = Protein,
-           fill = Protein)) +
-  geom_col() +
-  scale_fill_manual(values = type_palette, aesthetics = c("colour","fill")) +
-  xlab("Probe type") +
-  ylab("Number of datasets in which probe\nelicits the maximal recorded IgG binding") +
-  facet_wrap(~sero_age) +
-  theme_bw() +
-  theme(strip.background = element_blank(),
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+(zmpB_max_by_age_plot <-
+  ggplot(max_probe_binding %>%
+           dplyr::select(`Probe type`,Protein,sero_age,Frequency) %>%
+           dplyr::distinct(),
+         aes(x = reorder(`Probe type`,-Frequency),
+             y = Frequency,
+             colour = Protein,
+             fill = Protein)) +
+    geom_col() +
+    scale_fill_manual(values = type_palette, aesthetics = c("colour","fill")) +
+    xlab("Probe type") +
+    ylab("Number of datasets in which probe\nelicits the maximal recorded IgG binding") +
+    facet_wrap(~sero_age) +
+    theme_bw() +
+    theme(strip.background = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+)
 
 ```
 
@@ -7476,6 +7478,93 @@ time_of_first_exposure.df <-
 
 ```
 
+``` {r Relate clusters and environmental factor}
+
+get_or <- function(in.df,in.var) {
+  
+  ftest.out <-
+    fisher.test(
+        table(
+        in.df %>%
+          dplyr::filter(cluster %in% c("Infant high","Infant low")) %>%
+          dplyr::select(cluster,!!in.var,codenum) %>%
+          dplyr::distinct() %>%
+          dplyr::select(-codenum)
+      )
+    )
+  
+  tibble(
+    "condition" = in.var,
+    "estimate" = as.numeric(ftest.out$estimate),
+    "lower" = as.numeric(ftest.out$conf.int[1]),
+    "upper" = as.numeric(ftest.out$conf.int[2]),
+  )
+
+}
+
+or.df <-
+  dplyr::bind_rows(
+    get_or(antigen_exposure_response_environment.df %>%
+             dplyr::mutate(`Maternal smoking` = factor(mother_smoke, levels = c("Yes","No"))),
+           "Maternal smoking"),
+    get_or(antigen_exposure_response_environment.df %>%
+             dplyr::mutate(`Male child` = factor(dplyr::if_else(infant_gender=="Female","Yes","No"),
+                                                 levels = c("Yes","No"))),
+           "Female child"),
+    get_or(antigen_exposure_response_environment.df %>%
+             dplyr::mutate(`Charcoal fire` = factor(dplyr::if_else(house_fuel == "Charcoal","Charcoal","Non-Charcoal"),
+                                              levels = c("Charcoal","Non-Charcoal"))
+                           ),
+           "Charcoal fire")
+  )
+
+env_or_plot <-
+  ggplot(or.df,
+         aes(x = condition,
+             y = estimate,
+             ymin = lower,
+             ymax = upper)) +
+    geom_point() +
+    geom_errorbar(width = 0) +
+    ylab("Odds ratio") +
+    scale_y_continuous(trans = "log10") +
+    xlab("") +
+    geom_hline(yintercept = 1, linetype = 2) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+birth_weight_plot <-
+  ggplot(antigen_exposure_response_environment.df %>%
+           dplyr::select(codenum,cluster,infant_bw) %>%
+           dplyr::distinct() %>%
+           dplyr::filter(cluster %in% c("Infant high","Infant low")),
+         aes(x = cluster,
+             y = infant_bw,
+             colour = cluster)) +
+    geom_point(position = position_jitter(width = 0.25)) +
+    geom_violin(alpha = 0,
+                scale = "width",
+                draw_quantiles = c(0.5),
+                colour = "black") +
+    scale_colour_manual(values = cluster_palette) +
+    ylab("Birth weight (g)") +
+    xlab("") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          legend.position = "none")
+
+env_plot <-
+  cowplot::plot_grid(plotlist = list(
+              env_or_plot,
+              birth_weight_plot
+            ),
+            ncol = 1,
+            nrow = 2,
+            labels = c("b","c")
+        )
+
+```
+
 ## Assemble Figure 1
 
 ```{r Assemble multipanel Figure 1, fig.width = 8, fig.height = 12}
@@ -7484,15 +7573,23 @@ cowplot::plot_grid(
   plotlist = list(
     cowplot::plot_grid(
       plotlist = list(
-        zmp_probe_plot + theme(legend.position = "none"),
-        clustering_by_age_plot + theme(legend.position = "none"),
-        all_individuals_early_by_cluster + theme(legend.position = "none"),
-        all_individuals_just_late_by_cluster + theme(legend.position = "none")
+        cowplot::plot_grid(
+          plotlist = list(
+            clustering_by_age_plot + theme(legend.position = "none"),
+            env_plot),
+          rel_widths = c(0.6,0.4),
+          labels = c("a","")
+        ),
+        cowplot::plot_grid(
+          plotlist = list(
+              all_individuals_early_by_cluster + theme(legend.position = "none"),
+              all_individuals_just_late_by_cluster + theme(legend.position = "none")),
+          rel_widths = c(0.5,0.5),
+          labels = c("d","e")
+        )
       ),
       nrow = 2,
-      ncol = 2,
-      rel_heights = c(0.6,0.4),
-      labels = "auto"
+      rel_heights = c(0.6,0.4)
     ),
     cowplot::get_legend(all_individuals_early_by_cluster)
     ),
@@ -7501,6 +7598,8 @@ cowplot::plot_grid(
 )
 
 ```
+
+## Assemble Figure 3
 
 ```{r Assemble multipanel Figure 3, fig.width = 8, fig.height = 8}
 
@@ -8511,8 +8610,8 @@ ggplot(inheritance_and_exposure_pneumonia_with_predictions.df,
   geom_point(alpha = 0.25,
              size = 0.25) +
   geom_smooth(method = "lm") +
-  xlab(expression('Observed IgG binding to ZmpB N terminal probe (log'[2]~'change in fluorescence)')) +
-  ylab(expression('Predicted IgG binding to ZmpB N terminal probe (log'[2]~'change in fluorescence)')) +
+  xlab(expression('Observed IgG binding (log'[2]~'change in fluorescence)')) +
+  ylab(expression('Predicted IgG binding (log'[2]~'change in fluorescence)')) +
   stat_cor(method = "pearson",
              p.accuracy = 0.000001,
              label.sep='\n'
@@ -9268,22 +9367,24 @@ hmab.df <-
                   ) %>%
     dplyr::filter(probe_type != "Other")
 
-ggplot(hmab.df,
-       aes(x = probe_type,
-           y = igg,
-           colour = zmp)) +
-  geom_point(position = position_jitter(width = 0.2)) +
-  geom_violin(alpha = 0,
-              draw_quantiles = c(0.5),
-              colour = "black") +
-  scale_colour_manual(values = c(type_palette,"ZmpC"="magenta"),
-                        aesthetics = c("fill","colour"),
-                        drop = TRUE, limits = force,
-                        name = "Protein type") +
-  ylab(expression('Array measurement of IgG binding (log'[2]~'change in fluorescence)')) +
-  xlab("Probe type") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+(hmab_plot <-
+  ggplot(hmab.df,
+         aes(x = probe_type,
+             y = igg,
+             colour = zmp)) +
+    geom_point(position = position_jitter(width = 0.2)) +
+    geom_violin(alpha = 0,
+                draw_quantiles = c(0.5),
+                colour = "black") +
+    scale_colour_manual(values = c(type_palette,"ZmpC"="magenta"),
+                          aesthetics = c("fill","colour"),
+                          drop = TRUE, limits = force,
+                          name = "Protein type") +
+    ylab(expression(atop('Array measurement of IgG binding','(log'[2]~'change in fluorescence)'))) +
+    xlab("Probe type") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+)
 
 ```
 
@@ -9304,6 +9405,37 @@ cowplot::plot_grid(
   nrow = 4,
   ncol = 1
 )
+
+```
+
+## Assemble Zmp Figure
+
+``` {r Zmp figure, fig.height = 11, fig.width = 8}
+
+#cowplot::plot_grid(
+#  plotlist = list(
+    cowplot::plot_grid(
+      plotlist = list(
+        zmp_probe_plot + theme(legend.position = "none"),
+        cowplot::plot_grid(
+          plotlist = list(
+            zmpB_max_by_age_plot + theme(legend.position = "none"),
+            hmab_plot + theme(legend.position = "none")
+          ),
+          ncol = 1,
+          rel_heights = c(0.6,0.4),
+          labels = c("b","c")
+        ),
+        rel_widths = c(0.5,0.5),
+        labels = c("a","")
+      )
+    )#,
+  #   cowplot::get_legend(zmpB_max_by_age_plot + theme(legend.direction = "horizontal"))
+  # ),
+#   rel_heights = c(1,0.05),
+#   ncol = 1,
+#   nrow = 2
+# )
 
 ```
 
