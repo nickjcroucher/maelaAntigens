@@ -7976,7 +7976,7 @@ exposure_protection_outlier_labels.df <-
 
 (modelling_response_protection_after_exposure_plot <-
   ggplot(antigen_response_protection_analysis.df %>%
-tidyr::pivot_wider(id_cols = c(antigen,Model,type), names_from = IgG_response, values_from = IgG) %>%
+           tidyr::pivot_wider(id_cols = c(antigen,Model,type), names_from = IgG_response, values_from = IgG) %>%
            dplyr::mutate(`Response at 24 mo` = `24 months` + `Binding to protein type`) %>%
            tidyr::pivot_longer(cols = -c(antigen,Model,type), names_to = "IgG_response", values_to = "IgG") %>%
            dplyr::filter(IgG_response %in% c("Response at 24 mo",
