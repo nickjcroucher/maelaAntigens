@@ -5434,26 +5434,32 @@ both_inheritance_and_exposure.antigen_list <-
   inheritance_and_exposure.df %>%
     dplyr::filter(sero_age == "12 months" & UnexposedCount > 1 & ExposedCount > 1) %>%
     dplyr::select(antigen) %>%
+    dplyr::distinct() %>%
+    dplyr::pull()
+
+just_inheritance.antigen_list <-  # Exclude ZmpE and rare DCL
+  inheritance_and_exposure.df %>%
+    dplyr::filter(sero_age == "12 months" & UnexposedCount == 0 & ExposedCount > 1) %>%
+    dplyr::select(antigen) %>%
+    dplyr::distinct() %>%
     dplyr::pull()
 
 both_inheritance_and_exposure.df <-
   inheritance_and_exposure.df %>%
-    dplyr::filter(antigen %in% both_inheritance_and_exposure.antigen_list) %>%
-    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months"))
+    dplyr::filter(antigen %in% both_inheritance_and_exposure.antigen_list)
 
 just_inheritance.df <-
   inheritance_and_exposure.df %>%
-    dplyr::filter(!(antigen %in% both_inheritance_and_exposure.antigen_list) & ExposedCount > 1) %>%  # Exclude ZmpE
-    dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months"))
+    dplyr::filter(antigen %in% just_inheritance.antigen_list)
 
 simple.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + (1|codenum) ,
-       data = just_inheritance.df,
+       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + (1|codenum) ,
-       data = just_inheritance.df,
+       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 ```
@@ -5462,17 +5468,17 @@ inheritance.antigen_model <-
 
 inheritance_and_exposure_since_birth.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + (1|codenum) ,
-       data = both_inheritance_and_exposure.df,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance_and_exposure_first_six_months.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + FirstSixMonths*antigen + Mat_IgG*antigen + (1|codenum) ,
-       data = both_inheritance_and_exposure.df,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 inheritance_and_exposure_last_six_months.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + LastSample*antigen + Mat_IgG*antigen + (1|codenum) ,
-       data = both_inheritance_and_exposure.df,
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
        REML = FALSE)
 
 antigen_response_models <- c(simple.antigen_model,
@@ -5955,36 +5961,46 @@ ggplot(antigen_response_analysis.df %>%
 
 ```{r Plot prediction againt observation for inheritance exposure lmers, fig.height = 8, fig.width = 8}
 
-inheritance_predictions <- predict(inheritance.antigen_model)
-inheritance_and_exposure_predictions <- predict(inheritance_and_exposure_since_birth.antigen_model)
-
 inheritance_and_exposure_with_predictions.df <-
-  inheritance_and_exposure.df %>%
-      dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
-      dplyr::mutate(Exposed = dplyr::if_else(antigen %in% both_inheritance_and_exposure.antigen_list,
-                                                  "Partial",
-                                                  "Universal"
-                                                  )
-                    ) %>%
-      dplyr::filter(Exposed == "Partial" | ExposedCount > 1) %>% # Get rid of ZmpE etc.
-      dplyr::group_by(Exposed) %>%
-      dplyr::mutate(index=row_number()) %>%
-      dplyr::ungroup() %>%
-      dplyr::left_join(
-        dplyr::bind_rows(
-          tibble(
-            "predicted" = inheritance_predictions,
-            "index"=1:length(inheritance_predictions),
-            "Exposed" = "Universal"
-          ),
-          tibble(
-            "predicted" = inheritance_and_exposure_predictions,
-            "index"=1:length(inheritance_and_exposure_predictions),
-            "Exposed" = "Partial"
-          )
-        ),
-        by = c("Exposed","index")
-      )
+  dplyr::bind_rows(
+    inheritance.antigen_model@frame %>%
+      tibble::add_column(predicted = predict(inheritance.antigen_model)) %>%
+      dplyr::mutate(SinceBirth = "ExposedSinceBirth") %>%
+      dplyr::mutate("Exposed" = "Universal"),
+    inheritance_and_exposure_since_birth.antigen_model@frame %>%
+      tibble::add_column(predicted = predict(inheritance_and_exposure_since_birth.antigen_model)) %>%
+      dplyr::mutate("Exposed" = "Partial")
+  )
+
+# inheritance_and_exposure_with_predictions.df <-
+#   inheritance_and_exposure.df %>%
+#       dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
+#       dplyr::mutate(Exposed = dplyr::case_when(
+#           antigen %in% both_inheritance_and_exposure.antigen_list ~ "Partial",
+#           antigen %in% just_inheritance.antigen_list ~ "Universal",                                          
+#           TRUE ~ "Neither"
+#         )
+#       ) %>%
+#       #dplyr::filter(Exposed == "Partial" | ExposedCount > 1) %>% # Get rid of ZmpE etc.
+#       dplyr::filter(Exposed != "Neither") %>%
+#       dplyr::group_by(Exposed) %>%
+#       dplyr::mutate(index=row_number()) %>%
+#       dplyr::ungroup() %>%
+#       dplyr::left_join(
+#         dplyr::bind_rows(
+#           tibble(
+#             "predicted" = inheritance_predictions,
+#             "index"=1:length(inheritance_predictions),
+#             "Exposed" = "Universal"
+#           ),
+#           tibble(
+#             "predicted" = inheritance_and_exposure_predictions,
+#             "index"=1:length(inheritance_and_exposure_predictions),
+#             "Exposed" = "Partial"
+#           )
+#         ),
+#         by = c("Exposed","index")
+#       )
 
 ggplot(inheritance_and_exposure_with_predictions.df,
        aes(x = igg,
@@ -6007,7 +6023,7 @@ ggplot(inheritance_and_exposure_with_predictions.df,
 
 check_analysis.df <-
   inheritance_and_exposure_with_predictions.df %>%
-    dplyr::select(codenum,sero_specnum,antigen,type,sero_age,igg,predicted,Exposed,SinceBirth,Mat_IgG) %>%
+    dplyr::select(codenum,antigen,type,sero_age,igg,predicted,Exposed,SinceBirth,Mat_IgG) %>%
     dplyr::mutate(Model = paste(Exposed,"exposure")) %>%
     # Age factor
     dplyr::left_join(antigen_response_analysis.df %>%
@@ -8475,36 +8491,16 @@ ggplot(maternal_protection.df,
 
 ```{r Plot prediction againt observation for inheritance exposure and disease lmers, fig.height = 8, fig.width = 8}
 
-inheritance_pneumonia_predictions <- 
-  predict(inheritance.protection.antigen_model)
-inheritance_and_exposure_pneumonia_predictions <-
-  predict(inheritance_and_exposure_since_birth.protection.antigen_model)
-
 inheritance_and_exposure_pneumonia_with_predictions.df <-
-  inheritance_and_exposure.df %>%
-      dplyr::mutate(Exposed = dplyr::if_else(antigen %in% both_inheritance_and_exposure.antigen_list,
-                                                  "Partial",
-                                                  "Universal"
-                                                  )
-                    ) %>%
-      dplyr::group_by(Exposed) %>%
-      dplyr::mutate(index=row_number()) %>%
-      dplyr::ungroup() %>%
-      dplyr::left_join(
-        dplyr::bind_rows(
-          tibble(
-            "predicted" = inheritance_pneumonia_predictions,
-            "index"=1:length(inheritance_pneumonia_predictions),
-            "Exposed" = "Universal"
-          ),
-          tibble(
-            "predicted" = inheritance_and_exposure_pneumonia_predictions,
-            "index"=1:length(inheritance_and_exposure_pneumonia_predictions),
-            "Exposed" = "Partial"
-          )
-        ),
-        by = c("Exposed","index")
-      )
+  dplyr::bind_rows(
+    inheritance.protection.antigen_model@frame %>%
+      tibble::add_column(predicted = predict(inheritance.protection.antigen_model)) %>%
+      dplyr::mutate(SinceBirth = "ExposedSinceBirth") %>%
+      dplyr::mutate("Exposed" = "Universal"),
+    inheritance_and_exposure_since_birth.protection.antigen_model@frame %>%
+      tibble::add_column(predicted = predict(inheritance_and_exposure_since_birth.protection.antigen_model)) %>%
+      dplyr::mutate("Exposed" = "Partial")
+  )
 
 ggplot(inheritance_and_exposure_pneumonia_with_predictions.df,
        aes(x = igg,
