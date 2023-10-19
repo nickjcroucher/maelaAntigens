@@ -4744,8 +4744,8 @@ mef_type.df <-
     dplyr::mutate(type = gsub("\\."," ",type)) %>%
     dplyr::mutate(age = gsub("\\."," ",age)) %>%
     dplyr::mutate(age = factor(age,
-                               levels = c("Cord",
-                                          "Birth",
+                               levels = c("Birth",
+                                          "Cord",
                                           "6 months",
                                           "12 months",
                                           "18 months",
@@ -7579,7 +7579,7 @@ first_and_last_outliers.df <-
     ylim(c(-1.5,5.5)) +
     xlim(c(-0.5,6.5)) +
     ylab(expression('Median IgG binding at 24 mo (log'[2]~'change in fluorescence)')) +
-    xlab(expression('IgG binding in maternal birth sample (log'[2]~'change in fluorescence)')) +
+    xlab(expression(atop('IgG binding in maternal birth sample,(log'[2]~'change in fluorescence)'))) +
     geom_smooth(colour = "black") +
     ggrepel::geom_label_repel(data = first_and_last_outliers.df %>%
                                       dplyr::filter(prot_label != "-" & !(type %in% c("PspA","non-ABT"))) %>%
@@ -7730,13 +7730,13 @@ cowplot::plot_grid(
           ),
           ncol = 2,
           nrow = 1,
-          labels = c("B","C")
+          labels = c("b","c")
         )
       ),
       nrow = 2,
       ncol = 1,
       rel_heights = c(0.5,0.5),
-      labels = c("A","")
+      labels = c("a","")
     ),
     cowplot::get_legend(simple_mef_type_plot +
                           guides(colour = guide_legend(direction = "horizontal")))
@@ -8297,7 +8297,9 @@ pneumoniae_by_age.df <-
     dplyr::group_by(codenum) %>%
     tidyr::fill(first_specdate) %>%
     dplyr::ungroup() %>%
-    dplyr::filter(grepl("neumonia",diagnosis_clinical))
+    dplyr::filter(grepl("neumonia",diagnosis_clinical)) %>%
+    dplyr::select(codenum,first_specdate,specdate,age.d,diagnosis_clinical) %>%
+    dplyr::distinct()
 
 (pneumonia_by_time_plot <-
   ggplot(pneumoniae_by_age.df,
@@ -8334,8 +8336,10 @@ colonisation_by_time_plot <-
                         labels = c("Frequently\ncolonised","Infrequently\ncolonised"),
                         name = "Colonisation\nfrequency",
                         aesthetics = c("fill","colour")) +
-    xlab("Age") +
-    ylab("Frequency")
+    xlab("Age (months)") +
+    scale_x_discrete(labels = c("6","12","18","24")) +
+    ylab("Frequency") +
+  theme_bw()
 
 cowplot::plot_grid(
   plotlist = list(
