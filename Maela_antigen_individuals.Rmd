@@ -4556,11 +4556,11 @@ sjPlot::tab_model(igg.int_clustering_model_4)
 
 igg.int_clustering_model_4_predictions <- predict(igg.int_clustering_model_4)
 
-inheritance_and_exposure_with_predictions.df <-
+antigen_model_with_predictions.df <-
   mef_input_with_clustering.df %>%
     dplyr::mutate(Prediction = igg.int_clustering_model_4_predictions)
 
-ggplot(inheritance_and_exposure_with_predictions.df,
+ggplot(antigen_model_with_predictions.df,
        aes(x = igg,
            y = Prediction,
            colour = type)) +
@@ -5970,6 +5970,12 @@ inheritance_and_exposure_with_predictions.df <-
     inheritance_and_exposure_since_birth.antigen_model@frame %>%
       tibble::add_column(predicted = predict(inheritance_and_exposure_since_birth.antigen_model)) %>%
       dplyr::mutate("Exposed" = "Partial")
+  ) %>%
+  dplyr::left_join(
+    inheritance_and_exposure.df %>%
+      dplyr::select(codenum,sero_age,cluster) %>%
+      dplyr::distinct(),
+    by = c("codenum","sero_age")
   )
 
 # inheritance_and_exposure_with_predictions.df <-
@@ -9264,7 +9270,7 @@ cowplot::plot_grid(
 
 # Calculate cluster ratio
 
-``` {r Calculate cluster rational, fig.height = 8, fig.width = 9}
+``` {r Calculate cluster ratio, fig.height = 8, fig.width = 9}
 
 cluster_ratio.df <-
   inheritance_and_exposure_with_predictions.df %>%
