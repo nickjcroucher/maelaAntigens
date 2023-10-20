@@ -9392,12 +9392,14 @@ hmab.df <-
 
 ``` {r ZmpB alignment, fig.width = 8, fig.height = 11}
 
+source("ggmsa_code.R")
+
 zmpB.aa <- file.path(paste0(getwd(),"/ZmpB_complete.aln"))
 chunk_size = 100
 msa_plot_list <- list()
 
 for (i in 1:4) {
-  msa_plot_list[[i]] <- ggplotify::as.ggplot(ggmsa(zmpB.aa, (i-1)*chunk_size+1, i*chunk_size+1, char_width = 0.5) + geom_msaBar())
+  msa_plot_list[[i]] <- ggplotify::as.ggplot(ggmsa(zmpB.aa, (i-1)*chunk_size+1, i*chunk_size+1, custom_color = aa_colours, char_width = 0.5) + geom_msaBar())
 }
 
 cowplot::plot_grid(
