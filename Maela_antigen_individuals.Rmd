@@ -7504,12 +7504,17 @@ get_or <- function(in.df,in.var) {
 or.df <-
   dplyr::bind_rows(
     get_or(antigen_exposure_response_environment.df %>%
-             dplyr::mutate(`Maternal smoking` = factor(mother_smoke, levels = c("Yes","No"))),
-           "Maternal smoking"),
-    get_or(antigen_exposure_response_environment.df %>%
-             dplyr::mutate(`Male child` = factor(dplyr::if_else(infant_gender=="Female","Yes","No"),
+             dplyr::mutate(`Female child` = factor(dplyr::if_else(infant_gender=="Female","Yes","No"),
                                                  levels = c("Yes","No"))),
            "Female child"),
+    get_or(antigen_exposure_response_environment.df %>%
+             dplyr::mutate(`S'gaw Karen mother` = factor(dplyr::if_else(mother_ethnic_group == "S'gaw Karen","Yes","No"),
+                                              levels = c("Yes","No"))),
+                           "S'gaw Karen mother"
+                           ),
+    get_or(antigen_exposure_response_environment.df %>%
+             dplyr::mutate(`Maternal smoking` = factor(mother_smoke, levels = c("Yes","No"))),
+           "Maternal smoking"),
     get_or(antigen_exposure_response_environment.df %>%
              dplyr::mutate(`Charcoal fire` = factor(dplyr::if_else(house_fuel == "Charcoal","Charcoal","Non-Charcoal"),
                                               levels = c("Charcoal","Non-Charcoal"))
