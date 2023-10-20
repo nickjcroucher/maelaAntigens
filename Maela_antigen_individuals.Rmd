@@ -49,7 +49,6 @@ require(sjPlot)
 require(moments)
 require(umap)
 require(archive)
-require(ggmsa)
 require(ggplotify)
 
 firstup <- function(x) {
