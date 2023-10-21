@@ -40,3 +40,4 @@ dependencies:
   - r-svglite=2.1.0
   - r-rjava=1.0
   - r-nnet=7.3
+  - r-ggplotify

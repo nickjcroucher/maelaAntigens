@@ -9332,7 +9332,7 @@ tibble(
 
 # Negative control
 
-``` {Plot hmAb data, fig.height = 8, fig.width = 8}
+``` {r Plot hmAb data, fig.height = 8, fig.width = 8}
 
 hmab.df <-
   read.csv(archive::archive_read("DataMatrix_HuMabs_Zmp.csv.tar.gz")) %>%
