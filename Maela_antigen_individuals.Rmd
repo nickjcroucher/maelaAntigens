@@ -8803,6 +8803,7 @@ cps_clustering_plot <-
 
 ``` {r Plot cps responses by pneumonia}
 
+(first_cps_plot <-
 plot_igg_levels(cps_igg.df %>%
                   dplyr::rename(type = Serotype) %>%
                   dplyr::mutate(AnyLRTISinceLastSample = gsub("LRTI",
@@ -8819,29 +8820,49 @@ plot_igg_levels(cps_igg.df %>%
                 x_lab = "Pneumonia diagnosis since last serum sample",
                 wrap_len = 15,
                 alpha_val = 1) +
-  scale_y_continuous(trans = "log2")
+  scale_y_continuous(trans = "log2") +
+  theme_bw()
+)
 
 ```
 
 ``` {r Plot cps responses before pneumonia}
 
-plot_igg_levels(cps_igg.df %>%
-                  dplyr::rename(type = Serotype) %>%
-                  dplyr::mutate(AnyLRTIBeforeNextSample = gsub("LRTI",
-                                                        "Pneumonia",
-                                                        AnyLRTIBeforeNextSample)
-                ) %>%
-                  dplyr::mutate(AnyLRTIBeforeNextSample = factor(AnyLRTIBeforeNextSample,
-                                                                levels = c("PneumoniaBeforeNextSample",
-                                                                           "NoPneumoniaBeforeNextSample")
-                                                                )
-                ),
-                "AnyLRTIBeforeNextSample",
-                rlevel = "NoPneumoniaBeforeNextSample",
-                x_lab = "Pneumonia diagnosis before next serum sample",
-                wrap_len = 15,
-                alpha_val = 1) +
-  scale_y_continuous(trans = "log2")
+(second_cps_plot <-
+  plot_igg_levels(cps_igg.df %>%
+                    dplyr::rename(type = Serotype) %>%
+                    dplyr::mutate(AnyLRTIBeforeNextSample = gsub("LRTI",
+                                                          "Pneumonia",
+                                                          AnyLRTIBeforeNextSample)
+                  ) %>%
+                    dplyr::mutate(AnyLRTIBeforeNextSample = factor(AnyLRTIBeforeNextSample,
+                                                                  levels = c("PneumoniaBeforeNextSample",
+                                                                             "NoPneumoniaBeforeNextSample")
+                                                                  )
+                  ),
+                  "AnyLRTIBeforeNextSample",
+                  rlevel = "NoPneumoniaBeforeNextSample",
+                  x_lab = "Pneumonia diagnosis before next serum sample",
+                  wrap_len = 15,
+                  alpha_val = 1) +
+    scale_y_continuous(trans = "log2") +
+    theme_bw()
+)
+
+```
+
+# Combine cps Ab plots
+
+``` {r Combine plots, fig.height = 10, fig.width = 8}
+
+cowplot::plot_grid(
+  plotlist = list(
+    first_cps_plot,
+    second_cps_plot
+  ),
+  nrow = 2,
+  labels = "auto"
+)
 
 ```
 
@@ -9410,7 +9431,7 @@ chunk_size = 100
 msa_plot_list <- list()
 
 for (i in 1:4) {
-  msa_plot_list[[i]] <- ggplotify::as.ggplot(ggmsa(zmpB.aa, (i-1)*chunk_size+1, i*chunk_size+1, custom_color = aa_colours, char_width = 0.5) + geom_msaBar())
+  msa_plot_list[[i]] <- ggplotify::as.ggplot(ggmsa(zmpB.aa, (i-1)*chunk_size+1, i*chunk_size+1, custom_color = aa_colours, char_width = 0.5))# + geom_msaBar())
 }
 
 cowplot::plot_grid(
