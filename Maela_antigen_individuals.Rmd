@@ -50,7 +50,7 @@ require(moments)
 require(umap)
 require(archive)
 require(ggplotify)
-require(r-seqmagick)
+require(seqmagick)
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
