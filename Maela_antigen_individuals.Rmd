@@ -5,9 +5,9 @@ date: "2023-02-18"
 always_allow_html: true
 output:
   html_document: default
+  keep_md: yes
   word_document: default
   keep_md: yes
-  self_contained: no
 ---
 
 ```{r setup, include=FALSE}
@@ -2568,12 +2568,15 @@ early_igg_by_cluster.data <-
 
 )
 
+save(all_individuals_early_by_cluster,
+     file="Maela_early_timepoint_tSNE.Rdata")
+
 # all_individuals_early +
 #   ggrepel::geom_label_repel(data=. %>% dplyr::filter(sero_age == "6 months"), aes(label = codenum))
 
 ```
 
-```{r Plot t-SNE across individuals at six months by cluster, fig.height = 9, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE across individuals at six months by cluster, fig.height = 10, fig.width = 8, messages = FALSE}
 
 individuals_in_high_cluster_at_6mo <-
   antigens.df %>%
@@ -2648,10 +2651,10 @@ cowplot::plot_grid(
   plotlist = list(
     cowplot::plot_grid(
       plotlist = list(
-        low_cluster_individuals_mid_by_cluster + theme(legend.position = "none"),
-        high_cluster_individuals_mid_by_cluster + theme(legend.position = "none")
+        high_cluster_individuals_mid_by_cluster + theme(legend.position = "none"),
+        low_cluster_individuals_mid_by_cluster + theme(legend.position = "none")
       ),
-      ncol = 2,
+      nrow = 2,
       labels = "auto"
     ),
     cowplot::get_legend(low_cluster_individuals_mid_by_cluster)
@@ -4987,7 +4990,7 @@ ggplot(early_zmp_exposures.df,
 
 ## How do immune responses mature?
 
-```{r What type of rise?, fig.height = 8, fig.width = 8}
+```{r What type of rise, fig.height = 8, fig.width = 8}
 
 summarise_igg_distributions.df <-
   antigen_exposure_response.df %>%
@@ -6713,6 +6716,29 @@ table(cluster_by_fuel.df$cluster,cluster_by_fuel.df$house_fuel) %>%
 
 ```
 
+```{r Plot response by birth weight, fig.width = 8, fig.height = 11}
+
+median_birth_weight <-
+  median(antigen_exposure_response_environment.df %>%
+           dplyr::select(codenum,infant_bw) %>%
+           dplyr::distinct() %>%
+           dplyr::select(infant_bw) %>%
+           dplyr::pull())
+
+plot_igg_levels(antigen_exposure_response_environment.df %>%
+                  dplyr::mutate(above_median_bw = dplyr::if_else(infant_bw > median_birth_weight,
+                                                                 "Above median birth weight",
+                                                                 "Below or at median birth weight")
+                                ),
+                "above_median_bw",
+                x_lab = "Birth weight relative to population median",
+                wrap_len = 15,
+                include_ages = c("Cord", "Birth", "6 months", "12 months", 
+"18 months", "24 months"))
+
+```
+
+
 # SIMLR validation
 
 ```{r Quick SIMLR test}
@@ -7494,6 +7520,7 @@ get_or <- function(in.df,in.var) {
         table(
         in.df %>%
           dplyr::filter(cluster %in% c("Infant high","Infant low")) %>%
+          dplyr::filter(sero_age == "24 months") %>%
           dplyr::select(cluster,!!in.var,codenum) %>%
           dplyr::distinct() %>%
           dplyr::select(-codenum)
@@ -7547,6 +7574,7 @@ env_or_plot <-
 
 birth_weight_plot <-
   ggplot(antigen_exposure_response_environment.df %>%
+           dplyr::filter(sero_age == "24 months") %>%
            dplyr::select(codenum,cluster,infant_bw) %>%
            dplyr::distinct() %>%
            dplyr::filter(cluster %in% c("Infant high","Infant low")),
@@ -7567,8 +7595,8 @@ birth_weight_plot <-
 
 env_plot <-
   cowplot::plot_grid(plotlist = list(
-              env_or_plot,
-              birth_weight_plot
+              birth_weight_plot,
+              env_or_plot
             ),
             ncol = 1,
             nrow = 2,
@@ -7809,7 +7837,8 @@ early_colonisation_late_clustering.df <-
     dplyr::rename(`Colonisation frequency` = Colonisation_freq)
 
 early_colonisation_late_clustering <-
-  ggplot(early_colonisation_late_clustering.df,
+  ggplot(early_colonisation_late_clustering.df %>%
+           dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
          aes(x = `Colonisation frequency`,
              colour = ClusterAt24Months,
              fill = ClusterAt24Months)) +
@@ -8856,13 +8885,27 @@ plot_igg_levels(cps_igg.df %>%
 
 ``` {r Combine plots, fig.height = 10, fig.width = 8}
 
-cowplot::plot_grid(
-  plotlist = list(
-    first_cps_plot,
-    second_cps_plot
-  ),
-  nrow = 2,
-  labels = "auto"
+(combined_cps_protection_plot <-
+  cowplot::plot_grid(
+    plotlist = list(
+      cowplot::plot_grid(
+        plotlist = list(
+          first_cps_plot + theme_bw() + theme(strip.background = element_blank(),
+                                              legend.position = "none",
+                                              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)),
+          second_cps_plot + theme_bw() + theme(strip.background = element_blank(),
+                                               legend.position = "none",
+                                              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+        ),
+        nrow = 2,
+        labels = "auto"
+      ),
+      cowplot::get_legend(first_cps_plot + guides(direction = 'horizontal'))
+    ),
+    nrow = 2,
+    ncol = 1,
+    rel_heights = c(0.9,0.1)
+  )
 )
 
 ```
@@ -9229,6 +9272,29 @@ plot_igg_levels(antigen_exposure_response.df %>%
 
 ```
 
+``` {r Plot igg levels prior to frequent colonisation, fig.height = 11, fig.width = 8}
+
+plot_igg_levels(antigen_exposure_response.df %>%
+                  dplyr::left_join(
+                    colonisation_by_sero_code.df %>%
+                      dplyr::select(sero_specnum,Subsequent_colonisation_freq),
+                                    by = c("sero_specnum")
+                ) %>%
+                dplyr::mutate(Subsequent_colonisation_freq = dplyr::if_else(
+                  Subsequent_colonisation_freq == "Frequently_colonised",
+                  "Frequently colonised",
+                  "Inrequently colonised"
+                  )
+                ) %>%
+                  dplyr::mutate(Subsequent_colonisation_freq = factor(Subsequent_colonisation_freq,
+                                                                      levels = c("Frequently colonised","Inrequently colonised"))),
+                "Subsequent_colonisation_freq",
+                x_lab = "Colonisation frequency before next serum sample",
+                include_ages = c("Cord","6 months", "12 months", "18 months"),
+                wrap_len = 15)
+
+```
+
 ``` {r Plot changes in IgG levels by age, fig.height = 8, fig.width = 8}
 
 ggplot(antigen_exposure_response.df %>%
@@ -9261,7 +9327,9 @@ ggplot(antigen_exposure_response.df %>%
              label.y = -2.5
   ) +
   facet_grid(type~sero_age) +
-  theme(legend.position = "none")
+  theme_bw() +
+  theme(legend.position = "none",
+        strip.background = element_blank())
 
 ```
 
@@ -9327,8 +9395,8 @@ cowplot::plot_grid(
   plotlist = list(
     cowplot::plot_grid(
       plotlist = list(
-        array_cluster_ratio_plot + theme(legend.position = "none"),
-        elisa_cluster_ratio_plot
+        array_cluster_ratio_plot + theme_bw() + theme(legend.position = "none"),
+        elisa_cluster_ratio_plot + theme_bw()
       ),
       nrow = 2,
       labels = "auto"
