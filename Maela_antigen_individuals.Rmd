@@ -3282,7 +3282,7 @@ antigen_exposure_response.df %<>%
 
 plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
                             include_ages = c("6 months", "12 months", "18 months", "24 months"),
-                            wrap_len = 25, alpha_val = 0.5) {
+                            wrap_len = 25, alpha_val = 0.5, step_increase_val = 0.12) {
   
   ref_level <- rlevel
   if (is.null(ref_level)) {
@@ -3334,7 +3334,7 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
       rstatix::adjust_pvalue() %>%
       rstatix::add_significance("p.adj") %>%
       dplyr::ungroup() %>%
-      rstatix::add_xy_position(x = var, dodge = 1) %>%
+      rstatix::add_xy_position(x = var, dodge = 1, step.increase = step_increase_val) %>%
       dplyr::filter(p.adj.signif != "ns")
 
   
@@ -3814,6 +3814,7 @@ plot_igg_levels(antigen_exposure_response.df,
                 "cluster",
                 rlevel = "Infant low",
                 x_lab = "Immune cluster",
+                step_increase_val = 0.25,
                 include_ages = c("Cord", "Birth", "6 months", "12 months", 
 "18 months", "24 months"),
                 wrap_len = 25) +
@@ -4663,7 +4664,8 @@ ggplot(igg_prediction_with_clustering.df,
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
         legend.position = "bottom",
         strip.background = element_blank()) +
-  xlab("Age")
+  xlab("Age") +
+  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)'))
 
 ```
 
@@ -5160,7 +5162,7 @@ d_width = 0.75
                               ) +
     geom_hline(yintercept = 0, linetype = 4) +
     theme_bw() +
-    ylab("Pearson correlation coefficient with maternal blood sample") +
+    ylab(expression("Pearson correlation coefficient ("*italic(R)*") with maternal blood sample")) +
     xlab("Comparator sample") +
     facet_wrap(.~type, nrow = 5) +
     theme(legend.position = "bottom",
@@ -5230,7 +5232,7 @@ outlier_labels_1b.df <-
     geom_hline(yintercept = 0, linetype = 2) +
     theme_bw() +
     xlab("Comparator sample") +
-    ylab("Pearson correlation coefficient with 6 mo sample") +
+    ylab(expression("Pearson correlation coefficient ("*italic(R)*") with maternal blood sample")) +
     facet_wrap(.~type, nrow = 5) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           legend.position = "bottom",
@@ -5362,7 +5364,7 @@ cluster_test.df <-
   ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-        legend.position = "right",
+        legend.position = "bottom",
         strip.background = element_blank()) +
   scale_colour_manual(values = cluster_palette,
                       aesthetics = c("fill","colour"),
@@ -6541,6 +6543,7 @@ plot_igg_levels(antigen_exposure_response_environment.df,
                 "mother_ethnic_group",
                 x_lab = "Ethnic group of mother",
                 wrap_len = 15,
+                step_increase_val = 0.2,
                 include_ages = c("Cord", "Birth", "6 months", "12 months", 
 "18 months", "24 months"))
 
@@ -7127,7 +7130,7 @@ ggplot(cdd_summary.df,
 
 ```
 
-```{r Plot response by domain, fig.width = 8, fig.height = 8}
+```{r Plot response by domain, fig.width = 8, fig.height = 11}
 
 responses_to_domains.df <-
   cdd.df %>%
@@ -7735,7 +7738,7 @@ first_and_last_outliers.df <-
     ylim(c(-1.5,5.5)) +
     xlim(c(-0.5,6.5)) +
     ylab(expression('Median IgG binding at 24 mo (log'[2]~'change in fluorescence)')) +
-    xlab(expression(atop('IgG binding in maternal birth sample,(log'[2]~'change in fluorescence)'))) +
+    xlab(expression(atop('IgG binding in maternal birth sample','(log'[2]~'change in fluorescence)'))) +
     geom_smooth(colour = "black") +
     ggrepel::geom_label_repel(data = first_and_last_outliers.df %>%
                                       dplyr::filter(prot_label != "-" & !(type %in% c("PspA","non-ABT"))) %>%
@@ -8218,42 +8221,42 @@ inheritance.colonisation_protection.antigen_model <-
 # Pre-diagnosis IgG levels
 inheritance.protection.prior_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) ,
-      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months")),
       REML = FALSE)
 
 inheritance_and_exposure_since_birth.protection.prior_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnyLRTIBeforeNextSample + (1|codenum) ,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months")),
        REML = FALSE)
 
 inheritance.severe_protection.prior_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) ,
-      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months")),
       REML = FALSE)
 
 inheritance.very_severe_protection.prior_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) ,
-      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+      data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months")),
       REML = FALSE)
 
 inheritance_and_exposure_since_birth.severe_protection.prior_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnySevereLRTIBeforeNextSample + (1|codenum) ,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.very_severe_protection.prior_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnyVerySevereLRTIBeforeNextSample + (1|codenum) ,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months")),
        REML = FALSE)
 
 inheritance_and_exposure_since_birth.colonisation_protection.prior_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) ,
-       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       data = both_inheritance_and_exposure.df %>% dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months")),
        REML = FALSE)
 
 inheritance.colonisation_protection.prior_protection.antigen_model <-
   lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*Subsequent_colonisation_freq + (1|codenum) ,
-       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Birth","6 months","12 months","18 months")),
+       data = just_inheritance.df %>% dplyr::filter(sero_age %in% c("Cord","6 months","12 months","18 months")),
        REML = FALSE)
 
 ```
@@ -8851,7 +8854,11 @@ plot_igg_levels(cps_igg.df %>%
                 wrap_len = 15,
                 alpha_val = 1) +
   scale_y_continuous(trans = "log2") +
-  theme_bw()
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          strip.background = element_blank(),
+          legend.position = "bottom")
+
 )
 
 ```
@@ -8876,7 +8883,11 @@ plot_igg_levels(cps_igg.df %>%
                   wrap_len = 15,
                   alpha_val = 1) +
     scale_y_continuous(trans = "log2") +
-    theme_bw()
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          strip.background = element_blank(),
+          legend.position = "bottom")
+
 )
 
 ```
@@ -8890,12 +8901,8 @@ plot_igg_levels(cps_igg.df %>%
     plotlist = list(
       cowplot::plot_grid(
         plotlist = list(
-          first_cps_plot + theme_bw() + theme(strip.background = element_blank(),
-                                              legend.position = "none",
-                                              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)),
-          second_cps_plot + theme_bw() + theme(strip.background = element_blank(),
-                                               legend.position = "none",
-                                              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+          first_cps_plot,
+          second_cps_plot
         ),
         nrow = 2,
         labels = "auto"
@@ -9130,7 +9137,7 @@ ggplot(elisa.df,
 
 ```
 
-``` {r Plot ELISA data by cluster, fig.height = 11, fig.width = 8}
+``` {r Plot ELISA data by cluster, fig.height = 14, fig.width = 8}
 
 elisa_cluster_test.df <-
   elisa.df %>%
@@ -9215,7 +9222,8 @@ elisa_cluster_ratio.df <-
                 alpha = 0.0) +
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
-    ylab("Ratio of infant high cluster to infant low cluster\nIgG titres")
+    ylab("Ratio of infant high cluster to infant low cluster\nIgG titres") +
+    theme_bw()
 )
 
 ```
@@ -9295,7 +9303,7 @@ plot_igg_levels(antigen_exposure_response.df %>%
 
 ```
 
-``` {r Plot changes in IgG levels by age, fig.height = 8, fig.width = 8}
+``` {r Plot changes in IgG levels by age, fig.height = 10, fig.width = 8}
 
 ggplot(antigen_exposure_response.df %>%
          dplyr::group_by(antigen,sero_age) %>%
@@ -9389,7 +9397,8 @@ array_cluster_ratio_plot <-
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
     ylab("Ratio of infant high cluster to infant low cluster\nIgG binding (fluorescence change)") +
-    scale_colour_manual(values = type_palette, name = "Protein type")
+    scale_colour_manual(values = type_palette, name = "Protein type") +
+    theme_bw()
 
 cowplot::plot_grid(
   plotlist = list(
@@ -9513,10 +9522,10 @@ cowplot::plot_grid(
 
 ## Assemble Zmp Figure
 
-``` {r Zmp figure, fig.height = 11, fig.width = 8}
+``` {r Zmp figure, fig.height = 9, fig.width = 8}
 
-#cowplot::plot_grid(
-#  plotlist = list(
+cowplot::plot_grid(
+  plotlist = list(
     cowplot::plot_grid(
       plotlist = list(
         zmp_probe_plot + theme(legend.position = "none"),
@@ -9526,19 +9535,20 @@ cowplot::plot_grid(
             hmab_plot + theme(legend.position = "none")
           ),
           ncol = 1,
+          nrow = 2,
           rel_heights = c(0.6,0.4),
           labels = c("b","c")
+        )
         ),
-        rel_widths = c(0.5,0.5),
-        labels = c("a","")
-      )
-    )#,
-  #   cowplot::get_legend(zmpB_max_by_age_plot + theme(legend.direction = "horizontal"))
-  # ),
-#   rel_heights = c(1,0.05),
-#   ncol = 1,
-#   nrow = 2
-# )
+      rel_widths = c(0.5,0.5),
+      labels = c("a","")
+    ),
+  cowplot::get_legend(zmpB_max_by_age_plot + theme(legend.direction = "horizontal"))
+  ),
+  rel_heights = c(1,0.05),
+  ncol = 1,
+  nrow = 2
+)
 
 ```
 
