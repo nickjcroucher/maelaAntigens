@@ -5,7 +5,7 @@ date: "2023-02-18"
 always_allow_html: true
 output:
   html_document: default
-    self_contained: false
+  self_contained: false
 ---
 
 ```{r setup, include=FALSE}
@@ -8488,26 +8488,25 @@ pneumoniae_by_age.df <-
 
 # Assemble Figure 7
 
-``` {r Assemble Figure 7, fig.width = 8, fig.height = 9}
+``` {r Assemble Figure 7, fig.width = 8, fig.height = 11}
 
 colonisation_by_time_plot <-
   ggplot(antigen_exposure_response_colonisation.df %>%
            dplyr::select(codenum,sero_age,Colonisation_freq) %>%
            dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
-           dplyr::distinct(),
+           dplyr::distinct() %>%
+           dplyr::group_by(sero_age) %>%
+           dplyr::summarise(Freq = sum(Colonisation_freq=="Frequently colonised")/n()) %>%
+           dplyr::ungroup(),
          aes(x = sero_age,
-             colour = Colonisation_freq,
-             fill = Colonisation_freq)) +
-    geom_bar() +
-    scale_colour_manual(values = c("Frequently colonised" = "darkviolet",
-                                   "Infrequently colonised" = "mediumpurple1"),
-                        labels = c("Frequently\ncolonised","Infrequently\ncolonised"),
-                        name = "Colonisation\nfrequency",
-                        aesthetics = c("fill","colour")) +
-    xlab("Age (months)") +
-    scale_x_discrete(labels = c("6","12","18","24")) +
-    ylab("Frequency") +
-  theme_bw()
+             y = Freq,
+             group = 1)) +
+    geom_point(colour = "purple") +
+    geom_line(colour = "purple") +
+    xlab("Age group (months)") +
+    scale_x_discrete(labels = c("0-6","6-12","12-18","18-24")) +
+    ylab("Proportion of age group\nfrequently colonised") +
+    theme_bw()
 
 cowplot::plot_grid(
   plotlist = list(
@@ -8522,11 +8521,51 @@ cowplot::plot_grid(
     )
   ),
   nrow = 2,
-  labels = c("a","")
+  labels = c("a",""),
+  rel_heights = c(0.5,0.3)
 )
 
 ```
 
+# Plot parameters for model fitted to subsequent colonisation
+
+``` {r Plot subsequent colonisation model parameter, fig.height = 11, fig.width = 8}
+
+maternal_col_factors.df <-
+  dplyr::bind_rows(
+    coef(inheritance.colonisation_protection.prior_protection.antigen_model)$codenum %>%
+      dplyr::select(dplyr::contains("Mat")) %>%
+      dplyr::slice_head(n = 1) %>%
+      tidyr::pivot_longer(dplyr::everything(),names_to = "ABT",values_to = "Mat_factor") %>%
+      dplyr::mutate(ABT = gsub("antigen","",gsub(":Mat_IgG","",ABT))) %>%
+      dplyr::mutate(base_val = dplyr::if_else(ABT == "Mat_IgG",Mat_factor,NA)) %>%
+      tidyr::fill(base_val) %>%
+      dplyr::mutate(Mat_factor = Mat_factor + base_val) %>%
+      dplyr::select(-base_val) %>%
+      dplyr::mutate(Model = "Universal exposure"),
+  coef(inheritance_and_exposure_since_birth.colonisation_protection.prior_protection.antigen_model)$codenum %>%
+    dplyr::select(dplyr::contains("Mat")) %>%
+    dplyr::slice_head(n = 1) %>%
+    tidyr::pivot_longer(dplyr::everything(),names_to = "ABT",values_to = "Mat_factor") %>%
+    dplyr::mutate(ABT = gsub("antigen","",gsub(":Mat_IgG","",ABT))) %>%
+    dplyr::mutate(base_val = dplyr::if_else(ABT == "Mat_IgG",Mat_factor,NA)) %>%
+    tidyr::fill(base_val) %>%
+    dplyr::mutate(Mat_factor = Mat_factor + base_val) %>%
+    dplyr::select(-base_val) %>%
+    dplyr::mutate(Model = "Partial exposure")
+  )
+
+ggplot(maternal_col_factors.df,
+       aes(y = Mat_factor,
+           x = Model)) +
+  geom_point(position = position_jitter()) +
+  geom_violin(draw_quantiles = c(0.5),
+               alpha = 0.0,
+               colour = "black",
+               scale = "width") +
+  theme_bw()
+
+```
 
 # Maternal antibody effects
 
@@ -8776,7 +8815,7 @@ cps_kinetics_plot <-
              y = igg,
              group = Study.code)) +
     geom_line() +
-    scale_y_continuous(trans = "log10") +
+    scale_y_continuous(trans = "log2") +
     facet_wrap(.~Serotype) +
     xlab("Age (months)") +
     ylab(expression('IgG titre (mg L'^{-1}*')')) +
@@ -8812,7 +8851,7 @@ cps_clustering_plot <-
                 width = 0.5,
                 position = position_dodge(width = 0.5)) +
     geom_point(position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.15)) +
-    scale_y_continuous(trans = "log10") +
+    scale_y_continuous(trans = "log2") +
     facet_wrap(.~Serotype) +
     scale_colour_manual(values = cluster_palette,
                       aesthetics = c("fill","colour"),
@@ -8859,6 +8898,7 @@ plot_igg_levels(cps_igg.df %>%
                 wrap_len = 15,
                 alpha_val = 1) +
   scale_y_continuous(trans = "log2") +
+  ylab(expression(atop("IgG binding level",'(log'[2]~' change in fluorescence)'))) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           strip.background = element_blank(),
@@ -8889,6 +8929,7 @@ plot_igg_levels(cps_igg.df %>%
                   alpha_val = 1) +
     scale_y_continuous(trans = "log2") +
     theme_bw() +
+    ylab(expression(atop("IgG binding level",'(log'[2]~' change in fluorescence)'))) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           strip.background = element_blank(),
           legend.position = "bottom")
@@ -8906,8 +8947,8 @@ plot_igg_levels(cps_igg.df %>%
     plotlist = list(
       cowplot::plot_grid(
         plotlist = list(
-          first_cps_plot,
-          second_cps_plot
+          first_cps_plot + theme(legend.position = "none"),
+          second_cps_plot + theme(legend.position = "none")
         ),
         nrow = 2,
         labels = "auto"
@@ -9227,7 +9268,7 @@ elisa_cluster_ratio.df <-
                 alpha = 0.0) +
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
-    ylab("Ratio of infant high cluster to infant low cluster\nIgG titres") +
+    ylab("Ratio of infant high cluster to\ninfant low cluster IgG titres") +
     theme_bw()
 )
 
@@ -9329,7 +9370,7 @@ ggplot(antigen_exposure_response.df %>%
   geom_point(alpha = 0.25, size = 0.25) +
   scale_y_continuous(limits = c(-5,5)) +
   geom_smooth(method = "lm", formula = y ~ x) +
-  xlab(expression('Difference between individual IgG response and population mean at previous timepoint (log'[2]~'change in fluorescence)')) +
+  xlab(expression(atop('Difference between individual IgG response and population mean at previous timepoint',' (log'[2]~'change in fluorescence)'))) +
   ylab(expression('Change in IgG response since last timepoint (log'[2]~'change in fluorescence)')) +
   scale_colour_manual(values = type_palette, aesthetics = c("fill","colour")) +
   #geom_hline(aes(yintercept = mean_change), linetype = 2) +
@@ -9337,7 +9378,8 @@ ggplot(antigen_exposure_response.df %>%
              p.accuracy = 0.000001,
              label.sep='\n',
              label.x = -8,
-             label.y = -2.5
+             label.y = -2.5,
+             size = 3
   ) +
   facet_grid(type~sero_age) +
   theme_bw() +
@@ -9401,7 +9443,7 @@ array_cluster_ratio_plot <-
                 alpha = 0.0) +
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
-    ylab("Ratio of infant high cluster to infant low cluster\nIgG binding (fluorescence change)") +
+    ylab("Ratio of infant high cluster to infant\nlow cluster IgG binding (fluorescence change)") +
     scale_colour_manual(values = type_palette, name = "Protein type") +
     theme_bw()
 
@@ -9487,7 +9529,7 @@ hmab.df <-
          aes(x = probe_type,
              y = igg,
              colour = zmp)) +
-    geom_point(position = position_jitter(width = 0.2)) +
+    geom_point(position = position_jitter(width = 0.2), size = 0.5) +
     geom_violin(alpha = 0,
                 draw_quantiles = c(0.5),
                 colour = "black") +
@@ -9495,7 +9537,7 @@ hmab.df <-
                           aesthetics = c("fill","colour"),
                           drop = TRUE, limits = force,
                           name = "Protein type") +
-    ylab(expression(atop('Array measurement of IgG binding','(log'[2]~'change in fluorescence)'))) +
+    ylab(expression(atop('Array measurement of IgG','binding (log'[2]~'change in fluorescence)'))) +
     xlab("Probe type") +
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
