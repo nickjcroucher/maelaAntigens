@@ -2546,7 +2546,7 @@ early_igg_by_cluster.data <-
   igg.data[,colnames(igg.data) %in% antigens.df$sero_specnum[antigens.df$sero_age %in% c("Cord","Birth")]]
 
 # load all_individuals_early_by_cluster
-load("Maela_early_timepoint_tSNE.Rdata")
+base::load("Maela_early_timepoint_tSNE.Rdata")
 
 ```
 
