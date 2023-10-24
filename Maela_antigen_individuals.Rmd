@@ -5,9 +5,7 @@ date: "2023-02-18"
 always_allow_html: true
 output:
   html_document: default
-  keep_md: yes
-  word_document: default
-  keep_md: yes
+    self_contained: false
 ---
 
 ```{r setup, include=FALSE}
