@@ -5,7 +5,6 @@ date: "2023-02-18"
 always_allow_html: true
 output:
   html_document: default
-  self_contained: false
 ---
 
 ```{r setup, include=FALSE}
@@ -9569,7 +9568,7 @@ cowplot::plot_grid(
 
 ## Assemble Zmp Figure
 
-``` {r Zmp figure, fig.height = 9, fig.width = 8}
+``` {r Zmp figure, fig.height = 9, fig.width = 8, cache=TRUE}
 
 cowplot::plot_grid(
   plotlist = list(
