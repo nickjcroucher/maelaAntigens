@@ -7707,7 +7707,7 @@ cowplot::plot_grid(
   rel_heights = c(0.5,0.55)
 )
 
-ggsave("maela_Antigens_Figure_2.pdf",
+ggsave("maela_Antigens_Figure_6.pdf",
        height = 11,
        width = 8)
 
