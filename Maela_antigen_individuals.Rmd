@@ -3387,12 +3387,18 @@ plot_igg_levels(antigen_exposure_response.df,
 
 ```
 
+## Figure 5
+
 ```{r Plot based on lifetime exposure, fig.height = 11, fig.width = 8}
 
 plot_igg_levels(antigen_exposure_response.df,
                 "SinceBirth",
                 x_lab = "Protein exposure since birth",
                 wrap_len = 15)
+
+ggsave("maela_Antigens_Figure_5.pdf",
+       height = 11,
+       width = 8)
 
 # PLOTTING FOR PRESENTATIONS
 # (since_birth_plot <- plot_igg_levels(antigen_exposure_response.df,
@@ -4028,6 +4034,8 @@ plot_variable_antigen_cor(pspA_cor)
 
 ```
 
+## Figure 8
+
 ```{r Plot PspA levels, fig.height = 8, fig.width = 8}
 
 plot_var_immunity_level <- function(df,antigen_type,cor_df) {
@@ -4051,6 +4059,10 @@ plot_var_immunity_level <- function(df,antigen_type,cor_df) {
 }
 
 plot_var_immunity_level(antigen_exposure_response.df,"PspA",pspA_cor)
+
+ggsave("maela_Antigens_Figure_8.pdf",
+       height = 11,
+       width = 8)
 
 ```
 
@@ -7644,9 +7656,13 @@ cowplot::plot_grid(
     rel_heights = c(0.95,0.075)
 )
 
+ggsave("maela_Antigens_Figure_1.pdf",
+       height = 12,
+       width = 8)
+
 ```
 
-## Assemble Figure 3
+## Assemble Figure 4
 
 ```{r Assemble multipanel Figure 3, fig.width = 8, fig.height = 8}
 
@@ -7670,11 +7686,13 @@ cowplot::plot_grid(
   rel_heights = c(0.925,0.075)
 )
 
-ggsave("Figure_4.pdf",
-       width = 8,
-       height = 8)
+ggsave("maela_Antigens_Figure_4.pdf",
+       height = 8,
+       width = 8)
 
 ```
+
+## Figure 6
 
 ```{r Assemble multipanel Figure 5, fig.width = 8, fig.height = 11}
 
@@ -7688,6 +7706,10 @@ cowplot::plot_grid(
   labels = "auto",
   rel_heights = c(0.5,0.55)
 )
+
+ggsave("maela_Antigens_Figure_2.pdf",
+       height = 11,
+       width = 8)
 
 ```
 
@@ -7909,6 +7931,10 @@ cowplot::plot_grid(
     ncol = 1,
     rel_heights = c(0.95,0.075)
 )
+
+ggsave("maela_Antigens_Figure_2.pdf",
+       height = 11,
+       width = 8)
 
 ```
 
@@ -8485,7 +8511,7 @@ pneumoniae_by_age.df <-
 
 ```
 
-# Assemble Figure 7
+# Assemble Figure 9
 
 ``` {r Assemble Figure 7, fig.width = 8, fig.height = 11}
 
@@ -8523,6 +8549,10 @@ cowplot::plot_grid(
   labels = c("a",""),
   rel_heights = c(0.5,0.3)
 )
+
+ggsave("maela_Antigens_Figure_9.pdf",
+       height = 11,
+       width = 8)
 
 ```
 
@@ -9348,6 +9378,8 @@ plot_igg_levels(antigen_exposure_response.df %>%
 
 ```
 
+## Figure 7
+
 ``` {r Plot changes in IgG levels by age, fig.height = 10, fig.width = 8}
 
 ggplot(antigen_exposure_response.df %>%
@@ -9384,6 +9416,10 @@ ggplot(antigen_exposure_response.df %>%
   theme_bw() +
   theme(legend.position = "none",
         strip.background = element_blank())
+
+ggsave("maela_Antigens_Figure_7.pdf",
+       height = 10,
+       width = 8)
 
 ```
 
@@ -9595,6 +9631,10 @@ cowplot::plot_grid(
   ncol = 1,
   nrow = 2
 )
+
+ggsave("maela_Antigens_Figure_3.pdf",
+       height = 9,
+       width = 8)
 
 ```
 
