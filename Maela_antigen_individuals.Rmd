@@ -1246,7 +1246,8 @@ maela_single_isolate_presence_absence.mat <-
             match_by = "lane",
             colour_by = "InferredGPSC",
             group_by = "InferredGPSC",
-            group_min = 5
+            group_min = 5,
+            max_iter = 50000
             )
 )
 
@@ -1517,7 +1518,7 @@ zmpA.dist.df <-
              fill = Rank)) +
     geom_density(alpha = 0.25) +
     geom_vline(xintercept = 0.575, linetype = 2) +
-    xlab(expression(italic(k)*"-mer distance")) +
+    xlab("Binary Jaccard similarity") +
     theme_bw() +
     facet_wrap(.~lane_type) +
     theme(strip.background = element_blank())
@@ -1537,7 +1538,7 @@ zmpB.dist.df <-
              fill = Rank)) +
     geom_density(alpha = 0.25) +
     geom_vline(xintercept = 0.475, linetype = 2) +
-    xlab(expression(italic(k)*"-mer distance")) +
+    xlab("Binary Jaccard similarity") +
     theme_bw() +
     theme(legend.position = "bottom") +
     facet_wrap(.~lane_type) +
@@ -1956,7 +1957,16 @@ antigen_classification.df <-
                     type == "CellWall" ~ "Cell Wall",
                     TRUE ~ type
                   )
-                )
+                ) %>%
+    dplyr::mutate(type = dplyr::case_when(
+                        antigen == "CBD" ~ "Adhesin",
+                        antigen == "PhageAmi" ~ "Cell Wall",
+                        antigen == "ZmpE" ~ "Degradative",
+                        antigen == "LytA" ~ "Cell Wall",
+                        antigen == "PblB" ~ "Adhesin",
+                        TRUE ~ type
+                      )
+                  )
 
 antigens.df <-
   igg.data %>%
@@ -1976,15 +1986,6 @@ antigens.df <-
                 ) %>%
     dplyr::filter(antigen != "CLS02728") %>% # left over pspC
     dplyr::left_join(antigen_classification.df, by = c("antigen")) %>%
-    dplyr::mutate(type = dplyr::case_when(
-                        antigen == "CBD" ~ "Adhesin",
-                        antigen == "PhageAmi" ~ "Cell Wall",
-                        antigen == "ZmpE" ~ "Degradative",
-                        antigen == "LytA" ~ "Cell Wall",
-                        antigen == "PblB" ~ "Adhesin",
-                        TRUE ~ type
-                      )
-                  ) %>%
     # Add sample information
     dplyr::left_join(translation.df, by = c("sero_specnum")) %>%
     # Calculate change from last timepoint
@@ -7838,7 +7839,7 @@ antigen_exposure_response_colonisation.df <-
 
 plot_igg_levels(antigen_exposure_response_colonisation.df,
                 "Colonisation_freq",
-                x_lab = "Frequency of pneumococcal colonisation",
+                x_lab = "Colonisation frequency since last serum sample",
                 wrap_len = 15)
 
 # Plot for presentation
@@ -8475,7 +8476,7 @@ pneumonia_palette <-
     geom_line() +
     geom_hline(yintercept = 0, linetype = 2) +
     xlab("Age (months)") +
-    ylab(expression(atop('Relative IgG binding in affected children in the','previous 6 months (log'[2]~'change in fluorescence)'))) +
+    ylab(expression(atop('Relative IgG binding in affected children','(log'[2]~'change in fluorescence)'))) +
     scale_colour_manual(values = pneumonia_palette) +
     theme_bw() +
     facet_grid(Timepoint~Model) +
@@ -9610,6 +9611,27 @@ cowplot::plot_grid(
 
 ``` {r Zmp figure, fig.height = 9, fig.width = 8, cache=TRUE}
 
+plot_for_legend <-
+  ggplot(
+    tibble(
+      `Protein type` = c("ZmpA", "ZmpB", "ZmpC", "ZmpD", "PspA", "PspC")
+      ),
+    aes(x = `Protein type`,
+        fill = `Protein type`,
+        colour = `Protein type`)
+  ) +
+    geom_bar() +
+    scale_colour_manual(values = 
+                          c("ZmpA" = "#ED0000FF",
+                          "ZmpB" = "#AD002AFF",
+                          "ZmpC" = "magenta",
+                          "ZmpD" ="#925E9FFF",
+                          "PspA" = "#00468BFF",
+                          "PspC" = "#0099B4FF"),
+                        aesthetics = c("colour","fill")) +
+    theme_bw() +
+    theme(legend.position = "bottom")
+
 cowplot::plot_grid(
   plotlist = list(
     cowplot::plot_grid(
@@ -9622,14 +9644,14 @@ cowplot::plot_grid(
           ),
           ncol = 1,
           nrow = 2,
-          rel_heights = c(0.6,0.4),
+          rel_heights = c(0.55,0.45),
           labels = c("b","c")
         )
         ),
       rel_widths = c(0.5,0.5),
       labels = c("a","")
     ),
-  cowplot::get_legend(zmpB_max_by_age_plot + theme(legend.direction = "horizontal"))
+  cowplot::get_legend(plot_for_legend + theme(legend.direction = "horizontal"))
   ),
   rel_heights = c(1,0.05),
   ncol = 1,
