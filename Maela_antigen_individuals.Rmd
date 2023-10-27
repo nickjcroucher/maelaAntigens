@@ -2661,7 +2661,7 @@ cowplot::plot_grid(
       nrow = 2,
       labels = "auto"
     ),
-    cowplot::get_legend(low_cluster_individuals_mid_by_cluster)
+    cowplot::get_legend(low_cluster_individuals_mid_by_cluster + theme(legend.box = "vertical"))
   ),
   nrow = 2,
   rel_heights = c(1,0.1)
@@ -3308,7 +3308,7 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
     dplyr::filter(sero_age %in% include_ages)
   
   if (is.factor(df[[var]])) {
-    original_levels = gsub("([[:lower:]])([[:upper:]]){1}", "\\1 \\2", unique(df[[var]]))
+    original_levels = gsub("([[:lower:]])([[:upper:]]){1}", "\\1 \\2", levels(df[[var]]))
     df[[var]] <- factor(gsub("([[:lower:]])([[:upper:]]){1}", "\\1 \\2", df[[var]]),
                         levels = original_levels)
   } else {
@@ -4029,12 +4029,16 @@ plot_variable_antigen_cor <- function(df) {
 pspA_cor <- get_cor_df(antigen_exposure_response.df,"PspA")
 plot_variable_antigen_cor(pspA_cor)
 
+
+ggsave("maela_Antigens_Figure_8.pdf",
+       height = 11,
+       width = 8)
+
 # For presentation
 # (pspA_cor_plot <- plot_variable_antigen_cor(pspA_cor)  + theme(legend.position = "right",legend.key.size = unit(1.5, 'cm'),legend.title = element_text(size=15),legend.text = element_text(size=15),axis.text = element_text(size=10)))
 
 ```
 
-## Figure 8
 
 ```{r Plot PspA levels, fig.height = 8, fig.width = 8}
 
@@ -4059,10 +4063,6 @@ plot_var_immunity_level <- function(df,antigen_type,cor_df) {
 }
 
 plot_var_immunity_level(antigen_exposure_response.df,"PspA",pspA_cor)
-
-ggsave("maela_Antigens_Figure_8.pdf",
-       height = 11,
-       width = 8)
 
 ```
 
@@ -5283,13 +5283,15 @@ plot_example_correlation <- function(antigen_name) {
             aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~"))) +
     geom_point() +
     ggtitle(antigen_name) +
+    xlab(expression(atop("IgG binding in maternal blood sample",'(log'[2]~'change in fluorescence)'))) +
+    ylab(expression(atop("IgG binding in 18 mo child sample",'(log'[2]~'change in fluorescence)'))) +
     theme_bw()
 }
 
 cowplot::plot_grid(
   plotlist = list(
     plot_example_correlation("CLS01620"), # Close to 0.25
-    plot_example_correlation("CLS00682") # Close to 0.1
+    plot_example_correlation("CLS01065") # Close to 0.1
   ),
   nrow = 1,
   labels = "auto"
@@ -8927,7 +8929,7 @@ plot_igg_levels(cps_igg.df %>%
                 wrap_len = 15,
                 alpha_val = 1) +
   scale_y_continuous(trans = "log2") +
-  ylab(expression(atop("IgG binding level",'(log'[2]~' change in fluorescence)'))) +
+  ylab(expression('IgG titre (mg L'^{-1}*')')) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           strip.background = element_blank(),
@@ -8958,7 +8960,7 @@ plot_igg_levels(cps_igg.df %>%
                   alpha_val = 1) +
     scale_y_continuous(trans = "log2") +
     theme_bw() +
-    ylab(expression(atop("IgG binding level",'(log'[2]~' change in fluorescence)'))) +
+    ylab(expression('IgG titre (mg L'^{-1}*')')) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           strip.background = element_blank(),
           legend.position = "bottom")
@@ -9327,7 +9329,7 @@ plot_igg_levels(antigen_exposure_response.df %>%
                   dplyr::mutate(AnyLRTIBeforeNextSample = factor(AnyLRTIBeforeNextSample,levels = c("PneumoniaBeforeNextSample","NoPneumoniaBeforeNextSample"))),
                 "AnyLRTIBeforeNextSample",
                 x_lab = "Pneumonia diagnosis before next serum sample",
-                include_ages = c("Birth","6 months", "12 months", "18 months"),
+                include_ages = c("Cord","6 months", "12 months", "18 months"),
                 wrap_len = 15)
 
 ```
@@ -9338,7 +9340,7 @@ plot_igg_levels(antigen_exposure_response.df %>%
                   dplyr::mutate(AnySevereLRTIBeforeNextSample = factor(AnySevereLRTIBeforeNextSample,levels = c("SeverePneumoniaBeforeNextSample","NoSeverePneumoniaBeforeNextSample"))),
                 "AnySevereLRTIBeforeNextSample",
                 x_lab = "Severe pneumonia diagnosis before next serum sample",
-                include_ages = c("Birth","6 months", "12 months", "18 months"),
+                include_ages = c("Cord","6 months", "12 months", "18 months"),
                 wrap_len = 15)
 
 ```
@@ -9350,7 +9352,7 @@ plot_igg_levels(antigen_exposure_response.df %>%
                   dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = factor(AnyVerySevereLRTIBeforeNextSample,levels = c("VerySeverePneumoniaBeforeNextSample","NoVerySeverePneumoniaBeforeNextSample"))),
                 "AnyVerySevereLRTIBeforeNextSample",
                 x_lab = "Very severe pneumonia diagnosis before next serum sample",
-                include_ages = c("Birth","6 months", "12 months", "18 months"),
+                include_ages = c("Cord","6 months", "12 months", "18 months"),
                 wrap_len = 15)
 
 ```
@@ -9363,17 +9365,18 @@ plot_igg_levels(antigen_exposure_response.df %>%
                       dplyr::select(sero_specnum,Subsequent_colonisation_freq),
                                     by = c("sero_specnum")
                 ) %>%
-                dplyr::mutate(Subsequent_colonisation_freq = dplyr::if_else(
+                dplyr::mutate(Subsequent_colonisation_freq = factor(dplyr::if_else(
                   Subsequent_colonisation_freq == "Frequently_colonised",
                   "Frequently colonised",
-                  "Inrequently colonised"
+                  "Infrequently colonised"
+                  ),
+                  levels = c("Frequently colonised","Infrequently colonised")
                   )
-                ) %>%
-                  dplyr::mutate(Subsequent_colonisation_freq = factor(Subsequent_colonisation_freq,
-                                                                      levels = c("Frequently colonised","Inrequently colonised"))),
+                ),
                 "Subsequent_colonisation_freq",
                 x_lab = "Colonisation frequency before next serum sample",
                 include_ages = c("Cord","6 months", "12 months", "18 months"),
+                rlevel = "Frequently colonised",
                 wrap_len = 15)
 
 ```
@@ -9519,6 +9522,7 @@ tibble(
 hmab.df <-
   read.csv(archive::archive_read("DataMatrix_HuMabs_Zmp.csv.tar.gz")) %>%
     tidyr::pivot_longer(dplyr::starts_with("IC.hmAb"),names_to = "hmAb",values_to = "MFI") %>%
+    dplyr::filter(MFI > 100) %>%
     dplyr::mutate(log2_MFI = log(MFI,2)) %>%
     dplyr::group_by(ID,hmAb) %>%
     dplyr::mutate(median_log2_MFI = median(log2_MFI)) %>%
