@@ -3914,7 +3914,7 @@ plot_igg_change(antigen_exposure_response.df %>%
 
 plot_igg_levels(antigen_exposure_response.df %>%
                   dplyr::mutate(AnySevereLRTISinceLastSample = gsub("LRTI","Pneumonia",AnySevereLRTISinceLastSample)) %>%
-                  dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample,levels = c("SeverePneumoniaSinceLastSample","NoSeverePneumoniaSinceLastSample"))),
+                  dplyr::mutate(AnySevereLRTISinceLastSample = factor(AnySevereLRTISinceLastSample,levels = c("SeverePneumoniaSinceLastSample","NoSeverePneumoniaSinceLastSample"))),
                 "AnySevereLRTISinceLastSample",
                 x_lab = "Severe pneumonia diagnosis since last serum sample",
                 wrap_len = 15)
@@ -3925,9 +3925,9 @@ plot_igg_levels(antigen_exposure_response.df %>%
 
 plot_igg_levels(antigen_exposure_response.df %>%
   dplyr::mutate(AnyVerySevereLRTISinceLastSample = gsub("LRTI","Pneumonia",AnyVerySevereLRTISinceLastSample)) %>%
-                  dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample,levels = c("VerySeverePneumoniaSinceLastSample","NoVerySeverePneumoniaSinceLastSample"))),
+                  dplyr::mutate(AnyVerySevereLRTISinceLastSample = factor(AnyVerySevereLRTISinceLastSample,levels = c("VerySeverePneumoniaSinceLastSample","NoVerySeverePneumoniaSinceLastSample"))),
                 "AnyVerySevereLRTISinceLastSample",
-                x_lab = "Severe pneumonia diagnosis since last serum sample",
+                x_lab = "Very severe pneumonia diagnosis since last serum sample",
                 wrap_len = 15)
 
 ```
