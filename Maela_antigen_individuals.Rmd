@@ -2414,8 +2414,9 @@ kruskal.test(rank~type,antigen_importance.df)
              y = rank,
              colour = type,
              fill = type)) +
-    geom_point(position = position_jitter(), alpha = 0.25, size = 0.5) +
+    geom_point(position = position_jitter(), alpha = 1, size = 0.5) +
     geom_violin(alpha = 0,
+                colour = "black",
                 draw_quantiles = c(0.5),
                scale = "width") +
     theme_bw() +
@@ -9215,11 +9216,11 @@ ggplot(elisa.df,
 
 ```
 
-``` {r Plot ELISA data by cluster, fig.height = 14, fig.width = 8}
+``` {r Plot ELISA data by cluster, fig.height = 16, fig.width = 10}
 
 elisa_cluster_test.df <-
   elisa.df %>%
-    dplyr::group_by(antigen,sero_age) %>%
+    dplyr::group_by(Label,sero_age) %>%
         rstatix::wilcox_test(Elisa_value ~ cluster,
                              ref.group = "Infant high",
                              paired = FALSE,
@@ -9249,7 +9250,9 @@ ggplot(elisa.df,
                       aesthetics = c("fill","colour"),
                       drop = TRUE, limits = force,
                       name = "Immune cluster") +
-  facet_grid(antigen~sero_age, scales = 'free_y') +
+  facet_grid(Label~sero_age,
+             scales = 'free_y',
+             labeller = labeller(groupwrap = label_wrap_gen(10))) +
   theme_bw() +
   xlab("") +
   ylab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
@@ -9289,6 +9292,25 @@ elisa_cluster_ratio.df <-
     tidyr::pivot_wider(names_from = cluster, values_from = predicted) %>%
     dplyr::mutate(Ratio = `Infant high`/`Infant low`)
 
+ggplot(elisa_with_predictions.df,
+       aes(x = Elisa_value,
+           y = predicted,
+           colour = cluster)) +
+  geom_point(alpha = 0.25) +
+  geom_smooth(method = "lm") +
+  scale_colour_manual(values = cluster_palette,
+                      aesthetics = c("fill","colour"),
+                      drop = TRUE, limits = force,
+                      name = "Immune cluster") +
+  scale_y_continuous(trans = "log2") +
+  scale_x_continuous(trans = "log2") +
+  facet_wrap(~sero_age) +
+  theme_bw()
+
+```
+
+``` {r Calculate Elisa ratios}
+
 (elisa_cluster_ratio_plot <-
   ggplot(elisa_cluster_ratio.df,
          aes(x = sero_age,
@@ -9301,6 +9323,7 @@ elisa_cluster_ratio.df <-
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
     ylab("Ratio of infant high cluster to\ninfant low cluster IgG titres") +
+    scale_y_continuous(trans = "log10") +
     theme_bw()
 )
 
@@ -9483,6 +9506,7 @@ array_cluster_ratio_plot <-
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
     ylab("Ratio of infant high cluster to infant\nlow cluster IgG binding (fluorescence change)") +
+    scale_y_continuous(trans = "log10") +
     scale_colour_manual(values = type_palette, name = "Protein type") +
     theme_bw()
 
