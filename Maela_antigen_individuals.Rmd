@@ -4094,8 +4094,7 @@ ggplot(pspA_comparison.df,
 ```{r Plot PspC correlations, fig.height = 22, fig.width = 16}
 
 pspC_cor <- get_cor_df(antigen_exposure_response.df,"PspC")
-plot_variable_antigen_cor(pspC_cor) +
-  theme(axis.text.x = element_text(size = 6))
+plot_variable_antigen_cor(pspC_cor)
 
 ```
 
@@ -7586,8 +7585,9 @@ env_or_plot <-
              y = estimate,
              ymin = lower,
              ymax = upper)) +
-    geom_point() +
-    geom_errorbar(width = 0) +
+    geom_point(colour = as.character(cluster_palette["Infant high"])) +
+    geom_errorbar(width = 0,
+                  colour = as.character(cluster_palette["Infant high"])) +
     ylab("Odds ratio") +
     scale_y_continuous(trans = "log10") +
     xlab("") +
@@ -9427,7 +9427,10 @@ ggplot(antigen_exposure_response.df %>%
            fill = type)) +
   geom_point(alpha = 0.25, size = 0.25) +
   scale_y_continuous(limits = c(-5,5)) +
-  geom_smooth(method = "lm", formula = y ~ x) +
+  geom_smooth(method = "lm",
+              colour = "black",
+              fill = "grey",
+              formula = y ~ x) +
   xlab(expression(atop('Difference between individual IgG response and population mean at previous timepoint',' (log'[2]~'change in fluorescence)'))) +
   ylab(expression('Change in IgG response since last timepoint (log'[2]~'change in fluorescence)')) +
   scale_colour_manual(values = type_palette, aesthetics = c("fill","colour")) +
