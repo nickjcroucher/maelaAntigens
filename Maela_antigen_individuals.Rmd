@@ -2441,9 +2441,10 @@ rank_p_val_plot <-
              y = p_val,
              colour = type,
              fill = type)) +
-      geom_point(position = position_jitter(), alpha = 0.25, size = 0.5) +
+      geom_point(position = position_jitter(), alpha = 1, size = 0.5) +
       geom_violin(alpha = 0.0,
                   draw_quantiles = c(0.5),
+                  colour = "black",
                scale = "width") +
     xlab("Protein type") +
     ylab(expression(rho~"value")) +
@@ -7654,7 +7655,7 @@ cowplot::plot_grid(
       nrow = 2,
       rel_heights = c(0.6,0.4)
     ),
-    cowplot::get_legend(all_individuals_early_by_cluster)
+    cowplot::get_legend(all_individuals_early_by_cluster + scale_shape_manual(values = sero_age_shapes, name = "Age", drop = FALSE))
     ),
     nrow = 2,
     rel_heights = c(0.95,0.075)
@@ -9508,7 +9509,7 @@ array_cluster_ratio_plot <-
                 alpha = 0.0) +
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
-    ylab("Ratio of infant high cluster to infant\nlow cluster IgG binding (fluorescence change)") +
+    ylab("Ratio of infant high cluster to\ninfant low cluster IgG binding") +
     scale_y_continuous(trans = "log10") +
     scale_colour_manual(values = type_palette, name = "Protein type") +
     theme_bw()
