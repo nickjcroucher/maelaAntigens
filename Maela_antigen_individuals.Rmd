@@ -7736,10 +7736,8 @@ first_and_last.df <-
 
 first_and_last_outliers.df <-
   first_and_last.df %>%
-    dplyr::mutate(adj_birth = Birth - min(Birth)) %>%
-    dplyr::mutate(adj_24 = `24 months` - min(`24 months`)) %>%
-    dplyr::filter(Birth > 1 | `24 months` > 1) %>%
-    dplyr::filter(abs(Birth - `24 months`)/(0.5*Birth*`24 months`) > 1) %>%
+    dplyr::filter(Birth > 1 & `24 months` < 1) %>%
+    dplyr::filter(abs(Birth - `24 months`)/(0.5*Birth*`24 months`) > 0.75) %>%
     dplyr::inner_join(antigens.df %>%
                         dplyr::select(antigen,prot_label) %>%
                         dplyr::distinct(),
@@ -7773,7 +7771,7 @@ first_and_last_outliers.df <-
     geom_smooth(colour = "black") +
     ggrepel::geom_label_repel(data = first_and_last_outliers.df %>%
                                       dplyr::filter(prot_label != "-" & !(type %in% c("PspA","non-ABT"))) %>%
-                                      dplyr::filter(type %in% c("Adhesin") | prot_label %in% c("Wzg","TrpX","BlpB","AcoL")),
+                                      dplyr::filter(type %in% c("Adhesin")),
                               #aes(label = paste0(antigen,"\n",gene)),
                              aes(label = prot_label,
                                  colour = type),
