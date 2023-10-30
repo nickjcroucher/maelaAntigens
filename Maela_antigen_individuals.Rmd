@@ -7771,7 +7771,7 @@ first_and_last_outliers.df <-
     geom_smooth(colour = "black") +
     ggrepel::geom_label_repel(data = first_and_last_outliers.df %>%
                                       dplyr::filter(prot_label != "-" & !(type %in% c("PspA","non-ABT"))) %>%
-                                      dplyr::filter(type %in% c("Adhesin") | prot_label %in% c("AcoL","GroEL","Etrx1")),
+                                      dplyr::filter(type %in% c("Adhesin") | prot_label %in% c("AcoL","GroEL")),
                               #aes(label = paste0(antigen,"\n",gene)),
                              aes(label = prot_label,
                                  colour = type),
