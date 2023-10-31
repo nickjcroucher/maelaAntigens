@@ -2583,7 +2583,7 @@ save(all_individuals_early_by_cluster,
 
 ```
 
-```{r Plot t-SNE across individuals at six months by cluster, fig.height = 10, fig.width = 8, messages = FALSE}
+```{r Plot t-SNE across individuals at six months by cluster, fig.height = 11, fig.width = 8, messages = FALSE}
 
 individuals_in_high_cluster_at_6mo <-
   antigens.df %>%
@@ -2667,7 +2667,7 @@ cowplot::plot_grid(
     cowplot::get_legend(low_cluster_individuals_mid_by_cluster + theme(legend.box = "vertical"))
   ),
   nrow = 2,
-  rel_heights = c(1,0.1)
+  rel_heights = c(1,0.2)
 )
 
 ```
@@ -7300,12 +7300,14 @@ zmpB_max.df <-
       scale_colour_manual(values = type_palette,
                           aesthetics = c("fill","colour"),
                           drop = TRUE, limits = force,
-                          name = "Protein type") +
+                          name = "Protein type",
+                          guide = "none") +
     scale_shape_manual(values = sero_age_shapes, name = "Age") +
-    ylab(expression(atop('IgG binding to ZmpB N terminal probe','(log'[2]~'change in fluorescence)'))) +
+    guides(shape = guide_legend(nrow = 1)) +
+    ylab(expression(atop('IgG binding to ZmpB N terminal','probe (log'[2]~'change in fluorescence)'))) +
     xlab(expression(atop('Maximum IgG binding across all probes','(log'[2]~'change in fluorescence)'))) +
     theme_bw() +
-    theme(legend.position = "none")
+    theme(legend.position = "bottom")
 )
 
 ```
@@ -7407,7 +7409,7 @@ ggplot(max_probe_binding,
 
 ```
 
-```{r Probe correlations over time, fig.width = 8, fig.height = 10}
+```{r Probe correlations over time, fig.width = 8, fig.height = 11}
 
 get_probe_correlation <- function(test.df) {
   test.df %>%
@@ -7488,7 +7490,7 @@ cowplot::plot_grid(
     zmpB_max_plot
   ),
   nrow = 2,
-  rel_heights = c(0.5,0.4),
+  rel_heights = c(0.5,0.5),
   labels = "auto"
 )
 
