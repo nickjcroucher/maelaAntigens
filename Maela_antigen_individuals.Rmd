@@ -8473,9 +8473,9 @@ pneumonia_palette <-
              colour = Diagnosis,
              ymin = lwr,
              ymax = upr)) +
-    geom_point(position = position_dodge(width = dodge_width)) +
     geom_errorbar(width = 0.25, position = position_dodge(width = dodge_width)) +
     geom_line() +
+    geom_point(position = position_dodge(width = dodge_width)) +
     geom_hline(yintercept = 0, linetype = 2) +
     xlab("Age (months)") +
     ylab(expression(atop('Relative IgG binding in affected children','(log'[2]~'change in fluorescence)'))) +
@@ -9692,4 +9692,143 @@ ggsave("maela_Antigens_Figure_3.pdf",
 
 ```
 
+## Revision 2
 
+``` {r Fit model to all potential confounders}
+
+
+no_confounders.model <-
+  lmer(igg ~ sero_age + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+all_confounders.model <-
+  lmer(igg ~ sero_age + mother_ethnic_group + mother_smoke + infant_gender + infant_bw + house_fire + house_fuel + (1|codenum),
+       data = me_env.df,
+       REML = FALSE)
+
+sjPlot::plot_model(all_confounders.model) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  theme_bw()
+
+```
+
+``` {r Compare mixed effects models by AIC}
+
+AIC(no_confounders.model,all_confounders.model)
+
+```
+
+``` {r Linear model of confounders}
+
+no_confounders_no_re.model <-
+  lm(igg ~ sero_age,
+       data = me_env.df,
+       REML = FALSE)
+
+all_confounders_no_re.model <-
+  lm(igg ~ sero_age + mother_ethnic_group + mother_smoke + infant_gender + infant_bw + house_fire + house_fuel,
+       data = me_env.df,
+       REML = FALSE)
+
+sjPlot::plot_model(all_confounders_no_re.model) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  theme_bw()
+
+```
+
+``` {r Compare mixed effects models by AIC}
+
+AIC(no_confounders_no_re.model,all_confounders_no_re.model)
+
+```
+
+``` {r Tabulate effects of house fire}
+
+me_env.df %>%
+  dplyr::select(codenum,house_fuel) %>%
+  dplyr::distinct() %>%
+  dplyr::group_by(house_fuel) %>%
+  dplyr::summarise(count = n()) %>%
+  dplyr::ungroup()
+
+```
+``` {r Example models fitted with extra variables}
+
+just_inheritance_extra_vars.df <-
+  just_inheritance.df %>%
+    dplyr::left_join(me_env.df %>%
+                       dplyr::select(codenum,mother_ethnic_group,mother_smoke,infant_gender,infant_bw,house_fire,house_fuel) %>%
+                       dplyr::distinct(),
+                     by = c("codenum")
+                     )
+
+both_inheritance_and_exposure_extra_vars.df <-
+  both_inheritance_and_exposure.df %>%
+    dplyr::left_join(me_env.df %>%
+                       dplyr::select(codenum,mother_ethnic_group,mother_smoke,infant_gender,infant_bw,house_fire,house_fuel) %>%
+                       dplyr::distinct(),
+                     by = c("codenum")
+                     )
+
+# Pre-diagnosis IgG levels
+inheritance.protection_extra_vars.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + Mat_IgG*antigen + sero_age*AnyLRTISinceLastSample + mother_ethnic_group + mother_smoke + infant_gender + infant_bw + house_fire + house_fuel + (1|codenum) ,
+      data = just_inheritance_extra_vars.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+      REML = FALSE)
+
+inheritance_and_exposure_since_birth_extra_vars.protection.antigen_model <-
+  lmer(igg ~ sero_age*type + antigen + SinceBirth*antigen + Mat_IgG*antigen + sero_age*AnyLRTISinceLastSample + mother_ethnic_group + mother_smoke + infant_gender + infant_bw + house_fire + house_fuel + (1|codenum) ,
+       data = both_inheritance_and_exposure_extra_vars.df %>% dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")),
+       REML = FALSE)
+
+lrti_model_comparison.df <-
+  data.frame(
+  "Age" = c("12 mo","18 mo","24 mo"),
+  "Universal exposure original" = c(
+    coef(inheritance.protection.antigen_model)$codenum$`sero_age12 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1],
+    coef(inheritance.protection.antigen_model)$codenum$`sero_age18 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1],
+    coef(inheritance.protection.antigen_model)$codenum$`sero_age24 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1]
+  ),
+    "Universal exposure modified" = c(
+  coef(inheritance.protection_extra_vars.antigen_model)$codenum$`sero_age12 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1],
+  coef(inheritance.protection_extra_vars.antigen_model)$codenum$`sero_age18 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1],
+  coef(inheritance.protection_extra_vars.antigen_model)$codenum$`sero_age24 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1]
+  ),
+  "Differential exposure original" = c(
+    coef(inheritance_and_exposure_since_birth.protection.antigen_model)$codenum$`sero_age12 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1],
+    coef(inheritance_and_exposure_since_birth.protection.antigen_model)$codenum$`sero_age18 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1],
+    coef(inheritance_and_exposure_since_birth.protection.antigen_model)$codenum$`sero_age24 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1]
+  ),
+    "Differential exposure modified" = c(
+  coef(inheritance_and_exposure_since_birth_extra_vars.protection.antigen_model)$codenum$`sero_age12 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1],
+  coef(inheritance_and_exposure_since_birth_extra_vars.protection.antigen_model)$codenum$`sero_age18 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1],
+  coef(inheritance_and_exposure_since_birth_extra_vars.protection.antigen_model)$codenum$`sero_age24 months:AnyLRTISinceLastSampleLRTISinceLastSample`[1]
+  )
+) %>%
+  tidyr::pivot_longer(-Age, names_to = "Model", values_to = "Estimate") %>%
+  dplyr::mutate(
+    "Confounding fixed effects" = dplyr::if_else(grepl("modified",Model),"Confounding fixed effects","No confounding fixed effects"),
+    "Antigens" = dplyr::if_else(grepl("Universal",Model),"Universal exposure","Partial exposure")
+  )
+
+ggplot(lrti_model_comparison.df,
+       aes(x = Age,
+           y = Estimate)) +
+  geom_col() +
+  facet_grid(Antigens~`Confounding fixed effects`) +
+  theme_bw()
+
+```
+
+``` {r Compare AIC values for the adjusted pneumonia model 1}
+
+AIC(inheritance.protection.antigen_model,inheritance.protection_extra_vars.antigen_model)
+
+```
+
+``` {r Compare AIC values for the adjusted pneumonia model 2}
+
+AIC(inheritance_and_exposure_since_birth.protection.antigen_model,inheritance_and_exposure_since_birth_extra_vars.protection.antigen_model)
+
+```
