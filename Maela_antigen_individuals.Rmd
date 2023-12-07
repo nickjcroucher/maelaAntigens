@@ -50,6 +50,7 @@ require(archive)
 require(ggplotify)
 require(seqmagick)
 require(xlsx)
+require(openxlsx)
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
@@ -10005,11 +10006,11 @@ AIC(inheritance_and_exposure_since_birth.protection.antigen_model,inheritance_an
 
 ``` {r Generate source data file}
 
-source_data_fn <- "NCOMMS-23-35488B_source_data.xlsx"
+source_data_prefix <- "NCOMMS-23-35488B"
 
-add_source_data <- function(df = NULL, name = NULL, rownames_on = FALSE, append_on = TRUE, fn = source_data_fn) {
-  xlsx::write.xlsx2(as.data.frame(df),
-                 source_data_fn, 
+add_source_data <- function(df = NULL, name = NULL, rownames_on = FALSE, append_on = TRUE, fn = source_data_prefix) {
+  openxlsx::write.xlsx(as.data.frame(df),
+                 paste0(source_data_prefix,"_",name,".xlsx"), 
                  sheetName=name, 
                  col.names = TRUE,
                  row.names = rownames_on, 
