@@ -3380,7 +3380,7 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
     facet_grid(type~sero_age) +
     ggpubr::stat_pvalue_manual(test.df,
                          tip.length = 0,
-                         label = "p.adj.signif",
+                         label = "{scales::pvalue(p.adj)}",
                          inherit.aes = FALSE) +
     theme_bw() +
     xlab(x_lab) +
@@ -5250,6 +5250,9 @@ d_width = 0.75
     stat_pvalue_manual(early_sample_correlation_tests.df %>% dplyr::filter(!grepl("cor6to",comparison)),
                        colour = "black",
                        x = "comparison",
+                       size = 2,
+                       label = "{scales::pvalue(p.adj)}",
+                       hide.ns = TRUE,
                        y.position = 1.1)
 )
 
@@ -5318,6 +5321,9 @@ outlier_labels_1b.df <-
     stat_pvalue_manual(early_sample_correlation_tests.df %>% dplyr::filter(grepl("cor6to",comparison)),
                        colour = "black",
                        x = "comparison",
+                       size = 2,
+                       label = "{scales::pvalue(p.adj)}",
+                       hide.ns = TRUE,
                        y.position = 1.1)
 )
 
