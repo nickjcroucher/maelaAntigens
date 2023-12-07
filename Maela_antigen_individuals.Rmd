@@ -49,6 +49,7 @@ require(umap)
 require(archive)
 require(ggplotify)
 require(seqmagick)
+require(xlsx)
 
 firstup <- function(x) {
   substr(x, 1, 1) <- toupper(substr(x, 1, 1))
@@ -1192,23 +1193,28 @@ outliers.df <-
       dplyr::mutate(outlier = "Too low")
   )
 
-ggplot(deep_seq.cog.frequency.df,
-       aes(x = single_isolate,
-           y = deep_seq)) +
-  geom_point() +
-  xlab("Frequency in single isolate genomes") +
-  ylab("Frequency in deep sequencing datasets") +
-  geom_smooth(method = "lm", formula = y ~ x) +
-  ggrepel::geom_label_repel(data = outliers.df,
-                            aes(label = cog, colour = outlier),
-                            ) +
-  scale_color_manual(values = c("Too high" = "red","Too low" = "orange")) +
-  stat_cor(method = "pearson",
-             p.accuracy = 0.000001,
-             label.sep='\n'
-  ) +
-  theme_bw() +
-  theme(legend.position = "none")
+(deep_seq.cog.frequency_plot <-
+  ggplot(deep_seq.cog.frequency.df,
+         aes(x = single_isolate,
+             y = deep_seq)) +
+    geom_point() +
+    xlab("Frequency in single isolate genomes") +
+    ylab("Frequency in deep sequencing datasets") +
+    geom_smooth(method = "lm", formula = y ~ x) +
+    ggrepel::geom_label_repel(data = outliers.df,
+                              aes(label = cog, colour = outlier),
+                              ) +
+    scale_color_manual(values = c("Too high" = "red","Too low" = "orange")) +
+    stat_cor(method = "pearson",
+               p.accuracy = 0.000001,
+               label.sep='\n'
+    ) +
+    theme_bw() +
+    theme(legend.position = "none")
+)
+
+deep_seq.cog.frequency_source_info <-
+  deep_seq.cog.frequency_plot$data
 
 # CLS01741 - IS630-Spn1 transposase fragment
 # CLS02091 - transposase fragment
@@ -3394,10 +3400,11 @@ plot_igg_levels(antigen_exposure_response.df,
 
 ```{r Plot based on lifetime exposure, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df,
-                "SinceBirth",
-                x_lab = "Protein exposure since birth",
-                wrap_len = 15)
+figure_5_plot <-
+  plot_igg_levels(antigen_exposure_response.df,
+                  "SinceBirth",
+                  x_lab = "Protein exposure since birth",
+                  wrap_len = 15)
 
 ggsave("maela_Antigens_Figure_5.pdf",
        height = 11,
@@ -4030,8 +4037,9 @@ plot_variable_antigen_cor <- function(df) {
 }
 
 pspA_cor <- get_cor_df(antigen_exposure_response.df,"PspA")
-plot_variable_antigen_cor(pspA_cor)
-
+(pspA_cor_plot <-
+  plot_variable_antigen_cor(pspA_cor)
+)
 
 ggsave("maela_Antigens_Figure_8.pdf",
        height = 11,
@@ -9410,7 +9418,8 @@ plot_igg_levels(antigen_exposure_response.df %>%
 
 ``` {r Plot changes in IgG levels by age, fig.height = 10, fig.width = 8}
 
-ggplot(antigen_exposure_response.df %>%
+changes_by_age.df <-
+  antigen_exposure_response.df %>%
          dplyr::group_by(antigen,sero_age) %>%
          dplyr::mutate(mean_response = mean(igg)) %>%
          dplyr::ungroup() %>%
@@ -9421,32 +9430,36 @@ ggplot(antigen_exposure_response.df %>%
          dplyr::mutate(prev_mean_response = dplyr::lag(mean_response, n = 1L, order_by = sero_age)) %>%
          dplyr::ungroup() %>%
          dplyr::filter(sero_age %in% c("6 months","12 months","18 months","24 months")) %>%
-         dplyr::mutate(different_from_mean = igg - igg_delta - prev_mean_response),
-       aes(x = different_from_mean,
-           y = igg_delta,
-           colour = type,
-           fill = type)) +
-  geom_point(alpha = 0.25, size = 0.25) +
-  scale_y_continuous(limits = c(-5,5)) +
-  geom_smooth(method = "lm",
-              colour = "black",
-              fill = "grey",
-              formula = y ~ x) +
-  xlab(expression(atop('Difference between individual IgG response and population mean at previous timepoint',' (log'[2]~'change in fluorescence)'))) +
-  ylab(expression('Change in IgG response since last timepoint (log'[2]~'change in fluorescence)')) +
-  scale_colour_manual(values = type_palette, aesthetics = c("fill","colour")) +
-  #geom_hline(aes(yintercept = mean_change), linetype = 2) +
-  stat_cor(method = "pearson",
-             p.accuracy = 0.000001,
-             label.sep='\n',
-             label.x = -8,
-             label.y = -2.5,
-             size = 3
-  ) +
-  facet_grid(type~sero_age) +
-  theme_bw() +
-  theme(legend.position = "none",
-        strip.background = element_blank())
+         dplyr::mutate(different_from_mean = igg - igg_delta - prev_mean_response)
+
+(changes_by_age_plot <-
+  ggplot(changes_by_age.df,
+         aes(x = different_from_mean,
+             y = igg_delta,
+             colour = type,
+             fill = type)) +
+    geom_point(alpha = 0.25, size = 0.25) +
+    scale_y_continuous(limits = c(-5,5)) +
+    geom_smooth(method = "lm",
+                colour = "black",
+                fill = "grey",
+                formula = y ~ x) +
+    xlab(expression(atop('Difference between individual IgG response and population mean at previous timepoint',' (log'[2]~'change in fluorescence)'))) +
+    ylab(expression('Change in IgG response since last timepoint (log'[2]~'change in fluorescence)')) +
+    scale_colour_manual(values = type_palette, aesthetics = c("fill","colour")) +
+    #geom_hline(aes(yintercept = mean_change), linetype = 2) +
+    stat_cor(method = "pearson",
+               p.accuracy = 0.000001,
+               label.sep='\n',
+               label.x = -8,
+               label.y = -2.5,
+               size = 3
+    ) +
+    facet_grid(type~sero_age) +
+    theme_bw() +
+    theme(legend.position = "none",
+          strip.background = element_blank())
+)
 
 ggsave("maela_Antigens_Figure_7.pdf",
        height = 10,
@@ -9635,7 +9648,7 @@ cowplot::plot_grid(
 
 ```
 
-## Assemble Zmp Figure
+## Assemble Zmp Figure 3
 
 ``` {r Zmp figure, fig.height = 9, fig.width = 8, cache=TRUE}
 
@@ -9821,6 +9834,41 @@ ggplot(lrti_model_comparison.df,
 
 ```
 
+``` {r Estimate maternal influence}
+
+mat_relationship.df <-
+  dplyr::bind_rows(
+    data.frame(
+      "Antigens" = "Universal",
+      "Confounding" = "No confounding fixed effects",
+      "values" = as.numeric(coef(inheritance.protection.antigen_model)$codenum[1,grepl(":Mat_IgG",colnames(coef(inheritance.protection.antigen_model)$codenum))])
+    ),
+    data.frame(
+      "Antigens" = "Partial",
+      "Confounding" = "No confounding fixed effects",
+      "values" = as.numeric(coef(inheritance_and_exposure_since_birth.protection.antigen_model)$codenum[1,grepl(":Mat_IgG",colnames(coef(inheritance_and_exposure_since_birth.protection.antigen_model)$codenum))])
+    ),
+    data.frame(
+      "Antigens" = "Universal",
+      "Confounding" = "Confounding fixed effects",
+      "values" = as.numeric(coef(inheritance.protection_extra_vars.antigen_model)$codenum[1,grepl(":Mat_IgG",colnames(coef(inheritance.protection_extra_vars.antigen_model)$codenum))])
+    ),
+    data.frame(
+      "Antigens" = "Partial",
+      "Confounding" = "Confounding fixed effects",
+      "values" = as.numeric(coef(inheritance_and_exposure_since_birth_extra_vars.protection.antigen_model)$codenum[1,grepl(":Mat_IgG",colnames(coef(inheritance_and_exposure_since_birth_extra_vars.protection.antigen_model)$codenum))])
+    )
+  )
+
+ggplot(mat_relationship.df,
+       aes(x = values)) +
+  geom_density() +
+  facet_grid(Antigens~Confounding) +
+  theme_bw()
+
+```
+
+
 ``` {r Compare AIC values for the adjusted pneumonia model 1}
 
 AIC(inheritance.protection.antigen_model,inheritance.protection_extra_vars.antigen_model)
@@ -9832,3 +9880,57 @@ AIC(inheritance.protection.antigen_model,inheritance.protection_extra_vars.antig
 AIC(inheritance_and_exposure_since_birth.protection.antigen_model,inheritance_and_exposure_since_birth_extra_vars.protection.antigen_model)
 
 ```
+
+## Editorial changes
+
+``` {r Generate source data file}
+
+source_data_fn <- "NCOMMS-23-35488B_source_data.xlsx"
+
+add_source_data <- function(df = NULL, name = NULL, rownames_on = FALSE, append_on = TRUE, fn = source_data_fn) {
+  xlsx::write.xlsx2(as.data.frame(df),
+                 source_data_fn, 
+                 sheetName=name, 
+                 col.names = TRUE,
+                 row.names = rownames_on, 
+                 showNA=TRUE,
+                 append=append_on) 
+}
+
+# Figure 1
+add_source_data(clustering_by_age_plot$data, name = "Fig_1a", append_on = FALSE)
+add_source_data(birth_weight_plot$data, name = "Fig_1b")
+add_source_data(env_or_plot$data, name = "Fig_1c")
+add_source_data(all_individuals_early_by_cluster$data, name = "Fig_1d")
+add_source_data(all_individuals_just_late_by_cluster$data, name = "Fig_1e")
+# Figure 2
+add_source_data(model_comp_raw_data_plot$data, name = "Fig_2a")
+add_source_data(first_last_plot$data, name = "Fig_2b")
+add_source_data(simple_mef_type_plot$data, name = "Fig_2c")
+# Figure 3
+add_source_data(zmp_probe_plot$data, name = "Fig_3a")
+add_source_data(zmpB_max_by_age_plot$data, name = "Fig_3b")
+add_source_data(hmab_plot$data, name = "Fig_3c")
+# Figure 4
+add_source_data(early_sample_correlations_plot$data, name = "Fig_4a")
+add_source_data(late_sample_correlations_plot$data, name = "Fig_4b")
+# Figure 5
+add_source_data(figure_5_plot$data, name = "Fig_5")
+# Figure 6
+add_source_data(modelling_response_after_exposure_plot$data, name = "Fig_6a")
+add_source_data(response_by_exposures_plot$data, name = "Fig_6b")
+# Figure 7
+add_source_data(changes_by_age_plot$data, name = "Fig_7")
+# Figure 8
+add_source_data(pspA_cor_plot$data, name = "Fig_8")
+# Figure 9
+add_source_data(diagnosis_lmm_by_age_plot$data, name = "Fig_9a")
+add_source_data(pneumonia_by_time_plot$data, name = "Fig_9b")
+add_source_data(colonisation_by_time_plot$data, name = "Fig_9c")
+
+# Supplementary Figures
+add_source_data(deep_seq.cog.frequency_source_info, name = "test_sheet")
+
+
+```
+
