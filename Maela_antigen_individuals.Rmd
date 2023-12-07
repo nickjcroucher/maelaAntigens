@@ -9750,7 +9750,7 @@ sjPlot::plot_model(all_confounders_no_re.model) +
 
 ```
 
-``` {r Compare mixed effects models by AIC}
+``` {r Compare linear models by AIC}
 
 AIC(no_confounders_no_re.model,all_confounders_no_re.model)
 
