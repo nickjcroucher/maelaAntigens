@@ -4328,7 +4328,8 @@ igg_prediction.df %<>%
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           legend.position = "bottom",
           strip.background = element_blank()) +
-    xlab("Age") +
+    #xlab("Age") +
+    scale_x_discrete(labels = c("Cord","Birth","6 mo","12 mo","18 mo","24 mo"), name = "Age") +
     ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
     guides(colour = guide_legend(override.aes = list(alpha = 1)))
 )
@@ -4868,7 +4869,8 @@ simple_mef_type.df <-
     geom_line(size = 1) +
     geom_point() +
     ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
-    xlab("Age") +
+    #xlab("Age") +
+    scale_x_discrete(labels = c("Cord","Birth","6 mo","12 mo","18 mo","24 mo"), name = "Age") +
     scale_colour_manual(values = type_palette,
                         aesthetics = c("fill","colour"),
                         drop = TRUE, limits = force,
