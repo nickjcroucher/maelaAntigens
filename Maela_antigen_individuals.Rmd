@@ -7633,11 +7633,19 @@ get_or <- function(in.df,in.var) {
       )
     )
   
+  n_indiv <-
+    nrow(in.df %>%
+          dplyr::filter(cluster %in% c("Infant high","Infant low")) %>%
+          dplyr::filter(sero_age == "24 months") %>%
+          dplyr::select(cluster,!!in.var,codenum) %>%
+          dplyr::distinct())
+  
   tibble(
     "condition" = in.var,
     "estimate" = as.numeric(ftest.out$estimate),
     "lower" = as.numeric(ftest.out$conf.int[1]),
     "upper" = as.numeric(ftest.out$conf.int[2]),
+    "n" = n_indiv
   )
 
 }
@@ -7871,6 +7879,15 @@ first_and_last_outliers.df <-
 )
 
 ```
+
+## Correlation p value
+
+``` {r First last correlation p value}
+
+cor.test(first_and_last.df$`24 months`,first_and_last.df$Birth)$p.value
+
+```
+
 
 ## Any effect of IgG on colonisation?
 
