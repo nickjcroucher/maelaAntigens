@@ -1130,23 +1130,25 @@ outliers.df <-
       dplyr::mutate(outlier = "Too low")
   )
 
-ggplot(cog.frequency.df,
-       aes(x = mass_frequency,
-           y = maela_frequency)) +
-  geom_point() +
-  ylab("Frequency in Maela dataset") +
-  xlab("Frequency in Massachusetts dataset") +
-  geom_smooth(method = "lm", formula = y ~ x) +
-  ggrepel::geom_label_repel(data = outliers.df,
-                            aes(label = cog, colour = outlier),
-                            ) +
-  scale_color_manual(values = c("Too high" = "red","Too low" = "orange")) +
-  stat_cor(method = "pearson",
-             p.accuracy = 0.000001,
-             label.sep='\n'
-  ) +
-  theme_bw() +
-  theme(legend.position = "none")
+(mass_comparison_plot <-
+  ggplot(cog.frequency.df,
+         aes(x = mass_frequency,
+             y = maela_frequency)) +
+    geom_point() +
+    ylab("Frequency in Maela dataset") +
+    xlab("Frequency in Massachusetts dataset") +
+    geom_smooth(method = "lm", formula = y ~ x) +
+    ggrepel::geom_label_repel(data = outliers.df,
+                              aes(label = cog, colour = outlier),
+                              ) +
+    scale_color_manual(values = c("Too high" = "red","Too low" = "orange")) +
+    stat_cor(method = "pearson",
+               p.accuracy = 0.000001,
+               label.sep='\n'
+    ) +
+    theme_bw() +
+    theme(legend.position = "none")
+)
 
 cog.frequency.df[cog.frequency.df$mass_frequency < 0.6 & cog.frequency.df$maela_frequency > 0.8,]
 cog.frequency.df[cog.frequency.df$mass_frequency > 0.35 & cog.frequency.df$maela_frequency < 0.15,]
@@ -1440,7 +1442,9 @@ pspA.raw.df <-
 # need to check whether completed for all mappings
 pspA.df <- assign_by_matches(pspA.raw.df, threshold = 1500)
 
-plot_antigen_distribution(pspA.df)
+(pspA_distribution_plot <-
+  plot_antigen_distribution(pspA.df)
+)
 
 ```
 
@@ -1477,7 +1481,9 @@ pspC.raw.df <-
 # Was 500
 pspC.df <- assign_by_matches(pspC.raw.df, threshold = 1500)
 
-plot_antigen_distribution(pspC.df)
+(pspC_distribution_plot <-
+  plot_antigen_distribution(pspC.df)
+)
 
 ```
 
@@ -1594,7 +1600,9 @@ zmpA.df <-
                     threshold = 0.575) %>%
   dplyr::distinct()
 
-plot_antigen_distribution(zmpA.df)
+(zmpA_distribution_plot <-
+  plot_antigen_distribution(zmpA.df)
+)
 
 ```
 
@@ -1614,7 +1622,9 @@ zmpB.df <-
                     threshold = 0.475) %>%
   dplyr::distinct()
 
-plot_antigen_distribution(zmpB.df)
+(zmpB_distribution_plot <-
+  plot_antigen_distribution(zmpB.df)
+)
 
 ```
 
@@ -2050,31 +2060,33 @@ low_frequency.df <-
     dplyr::left_join(antigens.df %>% dplyr::select(antigen,prot_label) %>% dplyr::distinct(),
                      by = c("antigen"))
 
-ggplot(antigen_frequencies_in_population.df,
-       aes(x = type,
-           y = Frequency,
-           colour = type,
-           fill = type)) +
-  # geom_violin(draw_quantiles = c(0.5)) +
-  geom_point(position = position_jitter(width = 0.1, seed = 42), alpha = 0.5) +
-  xlab("Protein Type") +
-  ylab("Frequency in genomic datasets") +
-  theme_bw() +
-            scale_colour_manual(values = type_palette,
-                      aesthetics = c("fill","colour"),
-                      drop = TRUE, limits = force,
-                      name = "Protein type") +
-  ggrepel::geom_label_repel(data = low_frequency.df,
-                            aes(x = type,
-                                y = Frequency,
-                                label = prot_label,
-                                colour = type),
-                            min.segment.length = 10,
-                            inherit.aes = FALSE,
-                            position = position_jitter(width = 0.1, seed = 42)) +
-  guides(colour = guide_legend(override.aes = list(size=2, alpha = 1)),
-         fill = guide_legend(override.aes = list(size=2, alpha = 1))) +
-  theme(legend.position = "bottom")
+(antigen_pop_frequency_plot <-
+  ggplot(antigen_frequencies_in_population.df,
+         aes(x = type,
+             y = Frequency,
+             colour = type,
+             fill = type)) +
+    # geom_violin(draw_quantiles = c(0.5)) +
+    geom_point(position = position_jitter(width = 0.1, seed = 42), alpha = 0.5) +
+    xlab("Protein Type") +
+    ylab("Frequency in genomic datasets") +
+    theme_bw() +
+              scale_colour_manual(values = type_palette,
+                        aesthetics = c("fill","colour"),
+                        drop = TRUE, limits = force,
+                        name = "Protein type") +
+    ggrepel::geom_label_repel(data = low_frequency.df,
+                              aes(x = type,
+                                  y = Frequency,
+                                  label = prot_label,
+                                  colour = type),
+                              min.segment.length = 10,
+                              inherit.aes = FALSE,
+                              position = position_jitter(width = 0.1, seed = 42)) +
+    guides(colour = guide_legend(override.aes = list(size=2, alpha = 1)),
+           fill = guide_legend(override.aes = list(size=2, alpha = 1))) +
+    theme(legend.position = "bottom")
+)
 
 ```
 
@@ -2270,15 +2282,17 @@ save(sample_clustering_output,
 
 base::load(file="sample_clustering_scoring.Rdata")
 
-ggplot(data = tibble(
-                    "Number of clusters" = 2:10,
-                    "Score" = cluster_number_scoring$K1,
-                  ),
-        aes(x = `Number of clusters`,
-            y = Score)) +
-  geom_line() +
-  geom_point() +
-  theme_bw()
+(simlr_n_clusters_plot <-
+  ggplot(data = tibble(
+                      "Number of clusters" = 2:10,
+                      "Score" = cluster_number_scoring$K1,
+                    ),
+          aes(x = `Number of clusters`,
+              y = Score)) +
+    geom_line() +
+    geom_point() +
+    theme_bw()
+)
 
 ```
 
@@ -2307,21 +2321,23 @@ clustering_plot.df <-
   dplyr::rename(cluster = cluster_name)
 
 
-ggplot(clustering_plot.df,
-       aes(x = x,
-           y = y,
-           colour = cluster,
-           groups = cluster)) +
-  geom_point(size = 0.25, alpha = 0.25) +
-  stat_ellipse(type = "t") +
-  scale_colour_manual(values = cluster_palette,
-                      aesthetics = c("fill","colour"),
-                      drop = TRUE, limits = force,
-                      name = "Immune cluster") +
-  theme_bw() +
-  xlab("SIMLR dimension 1") +
-  ylab("SIMLR dimension 2") +
-  theme(legend.position = "bottom")
+(simlr_projection_plot <-
+  ggplot(clustering_plot.df,
+         aes(x = x,
+             y = y,
+             colour = cluster,
+             groups = cluster)) +
+    geom_point(size = 0.25, alpha = 0.25) +
+    stat_ellipse(type = "t") +
+    scale_colour_manual(values = cluster_palette,
+                        aesthetics = c("fill","colour"),
+                        drop = TRUE, limits = force,
+                        name = "Immune cluster") +
+    theme_bw() +
+    xlab("SIMLR dimension 1") +
+    ylab("SIMLR dimension 2") +
+    theme(legend.position = "bottom")
+)
 
 ```
 
@@ -2829,20 +2845,22 @@ sampling.df <-
                   )
 
 # Plot a summary of epidemiological data here
-ggplot(sampling.df %>%
-         dplyr::filter(category == "Infant" & !is.na(specnum)),
-       aes(x = specdate,
-           y = codenum,
-           colour = serotype,
-           shape = diagnosis_clinical)) +
-  geom_point() +
-  ylab("Individual") +
-  xlab("Sample collection date") +
-  theme_bw() +
-  theme(legend.position = "bottom",
-        legend.direction='vertical') +
-  guides(colour=guide_legend(ncol=6,title = "Serotype"),
-         shape=guide_legend(title="Sample type"))
+(sampling_plot <-
+  ggplot(sampling.df %>%
+           dplyr::filter(category == "Infant" & !is.na(specnum)),
+         aes(x = specdate,
+             y = codenum,
+             colour = serotype,
+             shape = diagnosis_clinical)) +
+    geom_point() +
+    ylab("Individual") +
+    xlab("Sample collection date") +
+    theme_bw() +
+    theme(legend.position = "bottom",
+          legend.direction='vertical') +
+    guides(colour=guide_legend(ncol=6,title = "Serotype"),
+           shape=guide_legend(title="Sample type"))
+)
 
 ```
 
@@ -3380,19 +3398,23 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
   
 }
 
-plot_igg_levels(antigen_exposure_response.df,
-                "FirstSixMonths",
-                x_lab = "Protein exposure in first six months",
-                wrap_len = 15)
+(igg_by_month_6_exposure <-
+  plot_igg_levels(antigen_exposure_response.df,
+                  "FirstSixMonths",
+                  x_lab = "Protein exposure in first six months",
+                  wrap_len = 15)
+)
 
 ```
 
 ```{r Plot based on first month, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df,
-                "FirstMonth",
-                x_lab = "Protein exposure in first month",
-                wrap_len = 15)
+(igg_by_month_1_exposure <-
+  plot_igg_levels(antigen_exposure_response.df,
+                  "FirstMonth",
+                  x_lab = "Protein exposure in first month",
+                  wrap_len = 15)
+)
 
 ```
 
@@ -3420,19 +3442,23 @@ ggsave("maela_Antigens_Figure_5.pdf",
 
 ```{r Plot based on exposure in last month, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df,
-                "LastMonth",
-                x_lab = "Protein exposure in the month prior to serum sampling",
-                wrap_len = 15)
+(igg_by_prior_month_exposure <-
+  plot_igg_levels(antigen_exposure_response.df,
+                  "LastMonth",
+                  x_lab = "Protein exposure in the month prior to serum sampling",
+                  wrap_len = 15)
+)
 
 ```
 
 ```{r Plot based on exposure since last test, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df,
-                "LastSample",
-                x_lab = "Protein exposure since last serum sample",
-                wrap_len = 15)
+(igg_by_prior_6_month_exposure <-
+  plot_igg_levels(antigen_exposure_response.df,
+                  "LastSample",
+                  x_lab = "Protein exposure since last serum sample",
+                  wrap_len = 15)
+)
 
 ```
 
@@ -3830,18 +3856,20 @@ ggplot(antigen_exposure_response.df,
 #     ) %>%
 #     dplyr::mutate(cluster = as.character(cluster))
 
-plot_igg_levels(antigen_exposure_response.df,
-                "cluster",
-                rlevel = "Infant low",
-                x_lab = "Immune cluster",
-                step_increase_val = 0.25,
-                include_ages = c("Cord", "Birth", "6 months", "12 months", 
-"18 months", "24 months"),
-                wrap_len = 25) +
-  scale_colour_manual(values = cluster_palette,
-                      aesthetics = c("fill","colour"),
-                      drop = TRUE, limits = force,
-                      name = "Immune cluster")
+(igg_by_cluster_plot <-
+  plot_igg_levels(antigen_exposure_response.df,
+                  "cluster",
+                  rlevel = "Infant low",
+                  x_lab = "Immune cluster",
+                  step_increase_val = 0.25,
+                  include_ages = c("Cord", "Birth", "6 months", "12 months", 
+  "18 months", "24 months"),
+                  wrap_len = 25) +
+    scale_colour_manual(values = cluster_palette,
+                        aesthetics = c("fill","colour"),
+                        drop = TRUE, limits = force,
+                        name = "Immune cluster")
+)
 
 ```
 
@@ -3891,12 +3919,14 @@ ggplot(clustering_info.df,
 #                   ) %>%
 #   dplyr::mutate(AnyLRTISinceLastSample = dplyr::if_else(LRTI_since_last_sample==0,"NoLRTISinceLastSample","LRTISinceLastSample"))
 
-plot_igg_levels(antigen_exposure_response.df %>%
-                  dplyr::mutate(AnyLRTISinceLastSample = gsub("LRTI","Pneumonia",AnyLRTISinceLastSample)) %>%
-                  dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample,levels = c("PneumoniaSinceLastSample","NoPneumoniaSinceLastSample"))),
-                "AnyLRTISinceLastSample",
-                x_lab = "Pneumonia diagnosis since last serum sample",
-                wrap_len = 15)
+(igg_by_pneumonia_since_last_sample_plot <-
+  plot_igg_levels(antigen_exposure_response.df %>%
+                    dplyr::mutate(AnyLRTISinceLastSample = gsub("LRTI","Pneumonia",AnyLRTISinceLastSample)) %>%
+                    dplyr::mutate(AnyLRTISinceLastSample = factor(AnyLRTISinceLastSample,levels = c("PneumoniaSinceLastSample","NoPneumoniaSinceLastSample"))),
+                  "AnyLRTISinceLastSample",
+                  x_lab = "Pneumonia diagnosis since last serum sample",
+                  wrap_len = 15)
+)
 
 # Plot for presentation
 # (pneumonia_plot <- plot_igg_levels(antigen_exposure_response.df %>%
@@ -3920,23 +3950,27 @@ plot_igg_change(antigen_exposure_response.df %>%
 
 ```{r Plot IgG levels by severe LRTI status, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df %>%
-                  dplyr::mutate(AnySevereLRTISinceLastSample = gsub("LRTI","Pneumonia",AnySevereLRTISinceLastSample)) %>%
-                  dplyr::mutate(AnySevereLRTISinceLastSample = factor(AnySevereLRTISinceLastSample,levels = c("SeverePneumoniaSinceLastSample","NoSeverePneumoniaSinceLastSample"))),
-                "AnySevereLRTISinceLastSample",
-                x_lab = "Severe pneumonia diagnosis since last serum sample",
-                wrap_len = 15)
+(igg_by_severe_pneumonia_since_last_sample_plot <-
+  plot_igg_levels(antigen_exposure_response.df %>%
+                    dplyr::mutate(AnySevereLRTISinceLastSample = gsub("LRTI","Pneumonia",AnySevereLRTISinceLastSample)) %>%
+                    dplyr::mutate(AnySevereLRTISinceLastSample = factor(AnySevereLRTISinceLastSample,levels = c("SeverePneumoniaSinceLastSample","NoSeverePneumoniaSinceLastSample"))),
+                  "AnySevereLRTISinceLastSample",
+                  x_lab = "Severe pneumonia diagnosis since last serum sample",
+                  wrap_len = 15)
+)
 
 ```
 
 ```{r Plot IgG levels by very severe LRTI status, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df %>%
-  dplyr::mutate(AnyVerySevereLRTISinceLastSample = gsub("LRTI","Pneumonia",AnyVerySevereLRTISinceLastSample)) %>%
-                  dplyr::mutate(AnyVerySevereLRTISinceLastSample = factor(AnyVerySevereLRTISinceLastSample,levels = c("VerySeverePneumoniaSinceLastSample","NoVerySeverePneumoniaSinceLastSample"))),
-                "AnyVerySevereLRTISinceLastSample",
-                x_lab = "Very severe pneumonia diagnosis since last serum sample",
-                wrap_len = 15)
+(igg_by_very_severe_pneumonia_since_last_sample_plot <-
+  plot_igg_levels(antigen_exposure_response.df %>%
+    dplyr::mutate(AnyVerySevereLRTISinceLastSample = gsub("LRTI","Pneumonia",AnyVerySevereLRTISinceLastSample)) %>%
+                    dplyr::mutate(AnyVerySevereLRTISinceLastSample = factor(AnyVerySevereLRTISinceLastSample,levels = c("VerySeverePneumoniaSinceLastSample","NoVerySeverePneumoniaSinceLastSample"))),
+                  "AnyVerySevereLRTISinceLastSample",
+                  x_lab = "Very severe pneumonia diagnosis since last serum sample",
+                  wrap_len = 15)
+)
 
 ```
 
@@ -4103,7 +4137,9 @@ ggplot(pspA_comparison.df,
 ```{r Plot PspC correlations, fig.height = 22, fig.width = 16}
 
 pspC_cor <- get_cor_df(antigen_exposure_response.df,"PspC")
-plot_variable_antigen_cor(pspC_cor)
+(pspC_cor_plot <-
+  plot_variable_antigen_cor(pspC_cor)
+)
 
 ```
 
@@ -4139,7 +4175,9 @@ ggplot(pspC_comparison.df,
 ```{r Plot ZmpA correlations, fig.height = 10, fig.width = 8}
 
 zmpA_cor <- get_cor_df(antigen_exposure_response.df,"ZmpA")
-plot_variable_antigen_cor(zmpA_cor)
+(zmpA_cor_plot <-
+  plot_variable_antigen_cor(zmpA_cor)
+)
 
 ```
 
@@ -4152,7 +4190,9 @@ plot_var_immunity_level(antigen_exposure_response.df,"ZmpA",zmpA_cor)
 ```{r Plot ZmpB correlations, fig.height = 10, fig.width = 8}
 
 zmpB_cor <- get_cor_df(antigen_exposure_response.df,"ZmpB")
-plot_variable_antigen_cor(zmpB_cor)
+(zmpB_cor_plot <-
+  plot_variable_antigen_cor(zmpB_cor)
+)
 
 ```
 
@@ -4243,21 +4283,23 @@ new_pred <- predict(igg.model_1, newdata = igg_prediction.df, re.form = NA)
 igg_prediction.df %<>%
   dplyr::mutate(prediction = new_pred)
 
-ggplot(igg_prediction.df,
-       aes(x = sero_age,
-           y = prediction,
-           group = type,
-           colour = type)) +
-  geom_line() +
-  geom_point() +
-  scale_colour_manual(values = type_palette,
-                      aesthetics = c("fill","colour"),
-                      drop = TRUE, limits = force,
-                      name = "Protein type") +
-  theme_bw() +
-  xlab("Age") +
-  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
-  theme(legend.position = "bottom")
+(predicted_by_type_age_plot <-
+  ggplot(igg_prediction.df,
+         aes(x = sero_age,
+             y = prediction,
+             group = type,
+             colour = type)) +
+    geom_line() +
+    geom_point() +
+    scale_colour_manual(values = type_palette,
+                        aesthetics = c("fill","colour"),
+                        drop = TRUE, limits = force,
+                        name = "Protein type") +
+    theme_bw() +
+    xlab("Age") +
+    ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
+    theme(legend.position = "bottom")
+)
 
 ```
 
@@ -4555,18 +4597,20 @@ clustering_model_list <- c(igg.no_clustering_model_1,igg.fe_clustering_model_1,i
 clustering_model_comparison.df <-
   pairwise_model_comparisons(clustering_model_list)
 
-ggplot(clustering_model_comparison.df,
-       aes(x = i,
-           y = j,
-           colour = delta_aic,
-           fill = delta_aic)) +
-  geom_tile() +
-  scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
-  xlab("Reference model index") +
-  ylab("Comparison model index") +
-  theme_bw() +
-  guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
-         fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+(clustering_model_comparison_plot <-
+  ggplot(clustering_model_comparison.df,
+         aes(x = i,
+             y = j,
+             colour = delta_aic,
+             fill = delta_aic)) +
+    geom_tile() +
+    scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
+    xlab("Reference model index") +
+    ylab("Comparison model index") +
+    theme_bw() +
+    guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
+           fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+)
 
 ```
 
@@ -4616,19 +4660,21 @@ ggplot(antigen_model_with_predictions.df,
 
 ```{r Plot simple prediction againt observation for responses by cluster, fig.height = 8, fig.width = 8}
 
-ggplot(antigen_model_with_predictions.df,
-       aes(x = igg,
-           y = Prediction)) +
-  geom_point(alpha = 0.25,
-             size = 0.25) +
-  geom_smooth(method = "lm") +
-  xlab(expression('Observed IgG binding level (log'[2]~'change in fluorescence)')) +
-  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
-  stat_cor(method = "pearson",
-             p.accuracy = 0.000001,
-             label.sep='\n'
-  ) +
-  theme_bw()
+(simple_predicted_v_observed_plot <-
+  ggplot(antigen_model_with_predictions.df,
+         aes(x = igg,
+             y = Prediction)) +
+    geom_point(alpha = 0.25,
+               size = 0.25) +
+    geom_smooth(method = "lm") +
+    xlab(expression('Observed IgG binding level (log'[2]~'change in fluorescence)')) +
+    ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
+    stat_cor(method = "pearson",
+               p.accuracy = 0.000001,
+               label.sep='\n'
+    ) +
+    theme_bw()
+)
 
 ```
 
@@ -4651,24 +4697,26 @@ new_pred_with_clustering <- predict(igg.int_clustering_model_4,
 igg_prediction_with_clustering.df %<>%
   dplyr::mutate(prediction = new_pred_with_clustering)
 
-ggplot(igg_prediction_with_clustering.df,
-       aes(x = sero_age,
-           y = prediction,
-           group = interaction(type,cluster),
-           colour = type)) +
-  geom_line() +
-  geom_point() +
-  theme_bw() +
-  facet_wrap(.~cluster) +
-  scale_colour_manual(values = type_palette,
-                      aesthetics = c("fill","colour"),
-                      drop = TRUE, limits = force,
-                      name = "Protein type") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-        legend.position = "bottom",
-        strip.background = element_blank()) +
-  xlab("Age") +
-  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)'))
+(predicted_by_type_age_cluster_plot <-
+  ggplot(igg_prediction_with_clustering.df,
+         aes(x = sero_age,
+             y = prediction,
+             group = interaction(type,cluster),
+             colour = type)) +
+    geom_line() +
+    geom_point() +
+    theme_bw() +
+    facet_wrap(.~cluster) +
+    scale_colour_manual(values = type_palette,
+                        aesthetics = c("fill","colour"),
+                        drop = TRUE, limits = force,
+                        name = "Protein type") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          legend.position = "bottom",
+          strip.background = element_blank()) +
+    xlab("Age") +
+    ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)'))
+)
 
 ```
 
@@ -5298,10 +5346,13 @@ plot_example_correlation <- function(antigen_name) {
     theme_bw()
 }
 
+cls01620_plot <- plot_example_correlation("CLS01620")
+cls01065_plot <-  plot_example_correlation("CLS01065")
+
 cowplot::plot_grid(
   plotlist = list(
-    plot_example_correlation("CLS01620"), # Close to 0.25
-    plot_example_correlation("CLS01065") # Close to 0.1
+    cls01620_plot, # Close to 0.25
+    cls01065_plot # Close to 0.1
   ),
   nrow = 1,
   labels = "auto"
@@ -5525,18 +5576,20 @@ antigen_response_models <- c(simple.antigen_model,
 antigen_response_model_comparisons.df <-
   pairwise_model_comparisons(antigen_response_models)
 
-ggplot(antigen_response_model_comparisons.df,
-       aes(x = i,
-           y = j,
-           colour = delta_aic,
-           fill = delta_aic)) +
-  geom_tile() +
-  scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
-  xlab("Reference model index") +
-  ylab("Comparison model index") +
-  theme_bw()+
-  guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
-         fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+(response_model_comparisons_plot <-
+  ggplot(antigen_response_model_comparisons.df,
+         aes(x = i,
+             y = j,
+             colour = delta_aic,
+             fill = delta_aic)) +
+    geom_tile() +
+    scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
+    xlab("Reference model index") +
+    ylab("Comparison model index") +
+    theme_bw()+
+    guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
+           fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+)
 
 ```
 
@@ -5938,40 +5991,42 @@ exposure_outlier_labels.df <-
 
 ```{r Plot types by age, fig.width = 8, fig.height = 8}
 
-ggplot(antigen_response_analysis.df %>%
-         dplyr::filter(IgG_response %in% c("6 months",
-                                                 "12 months",
-                                                 "18 months",
-                                                 "24 months")) %>%
-         dplyr::select(type,IgG_response,IgG,Model) %>%
-         dplyr::distinct() %>%
-         dplyr::mutate(Model = dplyr::if_else(Model == "Differential exposure",
-                                              "Partial exposure",
-                                              Model)) %>%
-         dplyr::group_by(type,Model) %>%
-         dplyr::mutate(first_value = dplyr::if_else(IgG_response == "6 months",IgG,NA_real_)) %>%
-         tidyr::fill(first_value) %>%
-         dplyr::mutate(adjusted_value = IgG - first_value) %>%
-         dplyr::ungroup(),
-       aes(x = IgG_response,
-           y = adjusted_value,
-           colour = type,
-           fill = type,
-           shape = Model,
-           linetype = Model,
-           group = interaction(type,Model))) +
-  geom_point(alpha = 0.5,
-             size = 1) +
-  geom_line() +
-  scale_colour_manual(values = type_palette,
-                      aesthetics = c("fill","colour"),
-                      drop = TRUE, limits = force,
-                      name = "Protein type") +
-  scale_x_discrete(labels = c("6 months","12 months","18 months","24 months")) +
-  ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
-  xlab("Age") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+(change_by_age_and_exposure_plot <-
+  ggplot(antigen_response_analysis.df %>%
+           dplyr::filter(IgG_response %in% c("6 months",
+                                                   "12 months",
+                                                   "18 months",
+                                                   "24 months")) %>%
+           dplyr::select(type,IgG_response,IgG,Model) %>%
+           dplyr::distinct() %>%
+           dplyr::mutate(Model = dplyr::if_else(Model == "Differential exposure",
+                                                "Partial exposure",
+                                                Model)) %>%
+           dplyr::group_by(type,Model) %>%
+           dplyr::mutate(first_value = dplyr::if_else(IgG_response == "6 months",IgG,NA_real_)) %>%
+           tidyr::fill(first_value) %>%
+           dplyr::mutate(adjusted_value = IgG - first_value) %>%
+           dplyr::ungroup(),
+         aes(x = IgG_response,
+             y = adjusted_value,
+             colour = type,
+             fill = type,
+             shape = Model,
+             linetype = Model,
+             group = interaction(type,Model))) +
+    geom_point(alpha = 0.5,
+               size = 1) +
+    geom_line() +
+    scale_colour_manual(values = type_palette,
+                        aesthetics = c("fill","colour"),
+                        drop = TRUE, limits = force,
+                        name = "Protein type") +
+    scale_x_discrete(labels = c("6 months","12 months","18 months","24 months")) +
+    ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
+    xlab("Age") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+)
 
 ```
 
@@ -6043,20 +6098,22 @@ inheritance_and_exposure_with_predictions.df <-
 #         by = c("Exposed","index")
 #       )
 
-ggplot(inheritance_and_exposure_with_predictions.df,
-       aes(x = igg,
-           y = predicted,
-           colour = Exposed)) +
-  geom_point(alpha = 0.25,
-             size = 0.25) +
-  geom_smooth(method = "lm") +
-  xlab(expression('Observed IgG binding level (log'[2]~'change in fluorescence)')) +
-  ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
-  stat_cor(method = "pearson",
-             p.accuracy = 0.000001,
-             label.sep='\n'
-  ) +
-  theme_bw()
+(exposure_model_predictions_plot <-
+  ggplot(inheritance_and_exposure_with_predictions.df,
+         aes(x = igg,
+             y = predicted,
+             colour = Exposed)) +
+    geom_point(alpha = 0.25,
+               size = 0.25) +
+    geom_smooth(method = "lm") +
+    xlab(expression('Observed IgG binding level (log'[2]~'change in fluorescence)')) +
+    ylab(expression('Predicted IgG binding level (log'[2]~'change in fluorescence)')) +
+    stat_cor(method = "pearson",
+               p.accuracy = 0.000001,
+               label.sep='\n'
+    ) +
+    theme_bw()
+)
 
 ```
 
@@ -6143,29 +6200,31 @@ lmem_exposure_summary_models_plot.df <-
     dplyr::ungroup() %>%
     tidyr::unnest(cols = c(n_exp,pred_val))
 
-ggplot(lmem_exposure_summary_plot.df,
-         aes(x = ExposuresSinceBirth,
-             y = igg,
-             group = antigen,
-             shape = sero_age)) +
-    geom_point(position = position_jitter(width = 0.05),
-               alpha = 0.5,
-               size = 0.5) +
-    # geom_line(data = lmem_exposure_summary_models_plot.df,
-    #           aes(x = n_exp,
-    #               y = pred_val),
-    #           inherit.aes = FALSE,
-    #           colour = "red") +
-    geom_smooth() +
-    ylim(c(-1,8)) +
-    xlab("Number of antigen-positive samples since birth") +
-    ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
-    theme_bw() +
-    scale_shape_manual(values = sero_age_shapes[names(sero_age_shapes) %in% c("6 months","12 months","18 months","24 months")],
-                       name = "Age") +
-    facet_wrap(.~name) +
-    theme(legend.position = "bottom",
-          strip.background = element_blank())
+(antigen_exposures_since_birth_large_plot <-
+  ggplot(lmem_exposure_summary_plot.df,
+           aes(x = ExposuresSinceBirth,
+               y = igg,
+               group = antigen,
+               shape = sero_age)) +
+      geom_point(position = position_jitter(width = 0.05),
+                 alpha = 0.5,
+                 size = 0.5) +
+      # geom_line(data = lmem_exposure_summary_models_plot.df,
+      #           aes(x = n_exp,
+      #               y = pred_val),
+      #           inherit.aes = FALSE,
+      #           colour = "red") +
+      geom_smooth() +
+      ylim(c(-1,8)) +
+      xlab("Number of antigen-positive samples since birth") +
+      ylab(expression('IgG binding level (log'[2]~'change in fluorescence)')) +
+      theme_bw() +
+      scale_shape_manual(values = sero_age_shapes[names(sero_age_shapes) %in% c("6 months","12 months","18 months","24 months")],
+                         name = "Age") +
+      facet_wrap(.~name) +
+      theme(legend.position = "bottom",
+            strip.background = element_blank())
+)
 
 ```
 
@@ -6567,13 +6626,15 @@ if (!("type" %in% colnames(antigen_exposure_response_environment.df))) {
 
 ```{r Plot response by ethnicity, fig.width = 8, fig.height = 11}
 
-plot_igg_levels(antigen_exposure_response_environment.df,
-                "mother_ethnic_group",
-                x_lab = "Ethnic group of mother",
-                wrap_len = 15,
-                step_increase_val = 0.2,
-                include_ages = c("Cord", "Birth", "6 months", "12 months", 
-"18 months", "24 months"))
+(igg_by_ethnicity <-
+  plot_igg_levels(antigen_exposure_response_environment.df,
+                  "mother_ethnic_group",
+                  x_lab = "Ethnic group of mother",
+                  wrap_len = 15,
+                  step_increase_val = 0.2,
+                  include_ages = c("Cord", "Birth", "6 months", "12 months", 
+  "18 months", "24 months"))
+)
 
 ```
 
@@ -6599,12 +6660,14 @@ fisher.test(cluster_by_ethnicity.tab,simulate.p.value=TRUE)
 
 ```{r Plot response by smoking, fig.width = 8, fig.height = 11}
 
-plot_igg_levels(antigen_exposure_response_environment.df,
-                "mother_smoke",
-                x_lab = "Maternal smoking",
-                wrap_len = 15,
-                include_ages = c("Cord", "Birth", "6 months", "12 months", 
-"18 months", "24 months"))
+(igg_by_smoking_plot <-
+  plot_igg_levels(antigen_exposure_response_environment.df,
+                  "mother_smoke",
+                  x_lab = "Maternal smoking",
+                  wrap_len = 15,
+                  include_ages = c("Cord", "Birth", "6 months", "12 months", 
+  "18 months", "24 months"))
+)
 
 ```
 
@@ -6630,10 +6693,12 @@ fisher.test(cluster_by_smoking.tab)
 
 ```{r Plot response by infant sex, fig.width = 8, fig.height = 11}
 
-plot_igg_levels(antigen_exposure_response_environment.df,
-                "infant_gender",
-                x_lab = "Sex",
-                wrap_len = 15)
+(igg_by_sex_plot <-
+  plot_igg_levels(antigen_exposure_response_environment.df,
+                  "infant_gender",
+                  x_lab = "Sex",
+                  wrap_len = 15)
+)
 
 ```
 
@@ -6725,12 +6790,14 @@ plot_igg_levels(antigen_exposure_response_environment.df,
 
 ```{r Plot response by heat source fuel, fig.width = 8, fig.height = 11}
 
-plot_igg_levels(antigen_exposure_response_environment.df,
-                "house_fuel",
-                x_lab = "Fuel used for house fire",
-                wrap_len = 15,
-                include_ages = c("Cord", "Birth", "6 months", "12 months", 
-"18 months", "24 months"))
+(igg_by_fuel_plot <-
+  plot_igg_levels(antigen_exposure_response_environment.df,
+                  "house_fuel",
+                  x_lab = "Fuel used for house fire",
+                  wrap_len = 15,
+                  include_ages = c("Cord", "Birth", "6 months", "12 months", 
+  "18 months", "24 months"))
+)
 
 ```
 
@@ -6756,16 +6823,18 @@ median_birth_weight <-
            dplyr::select(infant_bw) %>%
            dplyr::pull())
 
-plot_igg_levels(antigen_exposure_response_environment.df %>%
-                  dplyr::mutate(above_median_bw = dplyr::if_else(infant_bw > median_birth_weight,
-                                                                 "Above median birth weight",
-                                                                 "Below or at median birth weight")
-                                ),
-                "above_median_bw",
-                x_lab = "Birth weight relative to population median",
-                wrap_len = 15,
-                include_ages = c("Cord", "Birth", "6 months", "12 months", 
-"18 months", "24 months"))
+(igg_by_bw_plot <-
+  plot_igg_levels(antigen_exposure_response_environment.df %>%
+                    dplyr::mutate(above_median_bw = dplyr::if_else(infant_bw > median_birth_weight,
+                                                                   "Above median birth weight",
+                                                                   "Below or at median birth weight")
+                                  ),
+                  "above_median_bw",
+                  x_lab = "Birth weight relative to population median",
+                  wrap_len = 15,
+                  include_ages = c("Cord", "Birth", "6 months", "12 months", 
+  "18 months", "24 months"))
+)
 
 ```
 
@@ -7047,7 +7116,9 @@ plot_zmp_df <- function(df) {
 zmpB_igg.df <-
   get_zmp_df(probe.igg.data,"mpB")
 
-plot_zmp_df(zmpB_igg.df)
+(zmpB_by_age_plot <-
+  plot_zmp_df(zmpB_igg.df)
+)
 
 ```
 
@@ -7056,7 +7127,9 @@ plot_zmp_df(zmpB_igg.df)
 zmpA_igg.df <-
   get_zmp_df(probe.igg.data,"mpA")
 
-plot_zmp_df(zmpA_igg.df)
+(zmpA_by_age_plot <-
+  plot_zmp_df(zmpA_igg.df)
+)
 
 ```
 
@@ -7847,10 +7920,12 @@ antigen_exposure_response_colonisation.df <-
         by = c("sero_specnum")
     )
 
-plot_igg_levels(antigen_exposure_response_colonisation.df,
-                "Colonisation_freq",
-                x_lab = "Colonisation frequency since last serum sample",
-                wrap_len = 15)
+(igg_by_freq_colonisation_since_last_sample_plot <-
+  plot_igg_levels(antigen_exposure_response_colonisation.df,
+                  "Colonisation_freq",
+                  x_lab = "Colonisation frequency since last serum sample",
+                  wrap_len = 15)
+)
 
 # Plot for presentation
 # (carriage_plot<-plot_igg_levels(antigen_exposure_response_colonisation.df,
@@ -8147,18 +8222,20 @@ antigen_exposure_protection_models <-
 antigen_response_protection_model_comparisons.df <-
   pairwise_model_comparisons(antigen_exposure_protection_models)
 
-ggplot(antigen_response_protection_model_comparisons.df,
-       aes(x = i,
-           y = j,
-           colour = delta_aic,
-           fill = delta_aic)) +
-  geom_tile() +
-  scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
-  xlab("Reference model index") +
-  ylab("Comparison model index") +
-  theme_bw()+
-  guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
-         fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+(antigen_response_protection_model_aic_plot <-
+  ggplot(antigen_response_protection_model_comparisons.df,
+         aes(x = i,
+             y = j,
+             colour = delta_aic,
+             fill = delta_aic)) +
+    geom_tile() +
+    scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
+    xlab("Reference model index") +
+    ylab("Comparison model index") +
+    theme_bw()+
+    guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
+           fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+)
 
 ```
 
@@ -8732,21 +8809,23 @@ inheritance_and_exposure_pneumonia_with_predictions.df <-
       dplyr::mutate("Exposed" = "Partial")
   )
 
-ggplot(inheritance_and_exposure_pneumonia_with_predictions.df,
-       aes(x = igg,
-           y = predicted,
-           colour = Exposed,
-           fill = Exposed)) +
-  geom_point(alpha = 0.25,
-             size = 0.25) +
-  geom_smooth(method = "lm") +
-  xlab(expression('Observed IgG binding (log'[2]~'change in fluorescence)')) +
-  ylab(expression('Predicted IgG binding (log'[2]~'change in fluorescence)')) +
-  stat_cor(method = "pearson",
-             p.accuracy = 0.000001,
-             label.sep='\n'
-  ) +
-  theme_bw()
+(exposure_protection_model_predictions_plot <-
+  ggplot(inheritance_and_exposure_pneumonia_with_predictions.df,
+         aes(x = igg,
+             y = predicted,
+             colour = Exposed,
+             fill = Exposed)) +
+    geom_point(alpha = 0.25,
+               size = 0.25) +
+    geom_smooth(method = "lm") +
+    xlab(expression('Observed IgG binding (log'[2]~'change in fluorescence)')) +
+    ylab(expression('Predicted IgG binding (log'[2]~'change in fluorescence)')) +
+    stat_cor(method = "pearson",
+               p.accuracy = 0.000001,
+               label.sep='\n'
+    ) +
+    theme_bw()
+)
 
 ```
 
@@ -9150,18 +9229,20 @@ env_model_list <- c(igg.individual,
 env_model_comparison.df <-
   pairwise_model_comparisons(env_model_list)
 
-ggplot(env_model_comparison.df,
-       aes(x = i,
-           y = j,
-           colour = delta_aic,
-           fill = delta_aic)) +
-  geom_tile() +
-  scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
-  xlab("Reference model index") +
-  ylab("Comparison model index") +
-  theme_bw() +
-  guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
-         fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+(aic_with_confounders_plot <-
+  ggplot(env_model_comparison.df,
+         aes(x = i,
+             y = j,
+             colour = delta_aic,
+             fill = delta_aic)) +
+    geom_tile() +
+    scale_colour_distiller(type="div",aesthetics = c("colour","fill")) +
+    xlab("Reference model index") +
+    ylab("Comparison model index") +
+    theme_bw() +
+    guides(colour = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])),
+           fill = guide_colourbar(title = expression("AIC"[ref]-"AIC"[comp])))
+)
 
 ```
 
@@ -9201,27 +9282,29 @@ elisa.df <-
 # https://journals.asm.org/doi/full/10.1128/iai.68.10.5889-5900.2000?casa_token=c7ZAAZESPqMAAAAA%3AJ7KEEXKQZCGrU8WOWdFBrqpMVWUX4Q0pIrm0Won6OulstnVzqxOCHy3Rweh_7qwoykdacAj0Itwm4MHV
 # https://journals.asm.org/doi/full/10.1128/iai.68.10.5889-5900.2000?casa_token=c7ZAAZESPqMAAAAA%3AJ7KEEXKQZCGrU8WOWdFBrqpMVWUX4Q0pIrm0Won6OulstnVzqxOCHy3Rweh_7qwoykdacAj0Itwm4MHV
 
-ggplot(elisa.df,
-       aes(
-        x = Elisa_value,
-        y = igg)
-      ) +
-  geom_point(size = 0.25, alpha = 0.5) +
-  scale_x_continuous(trans = "log2") +
-  geom_smooth(method = "lm") +
-  stat_cor(method = "pearson",
-             p.accuracy = 0.000001,
-             label.sep='\n',
-           size = 2,
-           label.y = 6.5
-  ) +
-  xlab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
-  ylab(expression('Array measurement of IgG binding (log'[2]~'change in fluorescence)')) +
-  facet_wrap(~Label) +
-  theme_bw() +
-  theme(strip.background = element_blank(),
-        axis.text = element_text(size = 5),
-        strip.text = element_text(size = 8))
+(elisa_comparison_plot <-
+  ggplot(elisa.df,
+         aes(
+          x = Elisa_value,
+          y = igg)
+        ) +
+    geom_point(size = 0.25, alpha = 0.5) +
+    scale_x_continuous(trans = "log2") +
+    geom_smooth(method = "lm") +
+    stat_cor(method = "pearson",
+               p.accuracy = 0.000001,
+               label.sep='\n',
+             size = 2,
+             label.y = 6.5
+    ) +
+    xlab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
+    ylab(expression('Array measurement of IgG binding (log'[2]~'change in fluorescence)')) +
+    facet_wrap(~Label) +
+    theme_bw() +
+    theme(strip.background = element_blank(),
+          axis.text = element_text(size = 5),
+          strip.text = element_text(size = 8))
+)
 
 ```
 
@@ -9238,44 +9321,46 @@ elisa_cluster_test.df <-
         rstatix::add_xy_position(x = "cluster", dodge = 1, scales = "free_y") %>%
         dplyr::filter(p.adj.signif != "ns")
 
-ggplot(elisa.df,
-       aes(x = cluster,
-           y = Elisa_value,
-           colour = cluster,
-           fill = cluster)) +
-  geom_point(size = 0.025,
-             alpha = 1,
-             position = position_jitter()) +
-  geom_violin(draw_quantiles = c(0.5),
-              scale = "width",
-              colour = "black",
-              alpha = 0.0,
-              linewidth = 0.1) +
-  scale_y_continuous(trans = "log10",
-                     expand = expansion(mult = c(0, 0.35), 
-                                         add = c(0, 0))
-                     ) + #, limits = c(10,75000)) +
-  scale_colour_manual(values = cluster_palette,
-                      aesthetics = c("fill","colour"),
-                      drop = TRUE, limits = force,
-                      name = "Immune cluster") +
-  facet_grid(Label~sero_age,
-             scales = 'free_y',
-             labeller = labeller(groupwrap = label_wrap_gen(10))) +
-  theme_bw() +
-  xlab("") +
-  ylab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
-  theme(strip.background = element_blank(), strip.text.y = element_text(angle = 0),
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
-        axis.text.y = element_text(size = 8),
-        legend.position = "bottom") +
-  ggpubr::stat_pvalue_manual(elisa_cluster_test.df %>% 
-                               dplyr::mutate(y.position = log(1.5*y.position,10)),
-                              xmin = "group1", xmax = "group2", #y.position = "y.position",xmin="group1",xmax = "group2",
-                              label = "p.adj.signif",
-                              tip.length = 0,
-                              inherit.aes = FALSE) +
-  guides(colour = guide_legend(override.aes = list(alpha = 1)))
+(elisa_by_cluster_plot <-
+  ggplot(elisa.df,
+         aes(x = cluster,
+             y = Elisa_value,
+             colour = cluster,
+             fill = cluster)) +
+    geom_point(size = 0.025,
+               alpha = 1,
+               position = position_jitter()) +
+    geom_violin(draw_quantiles = c(0.5),
+                scale = "width",
+                colour = "black",
+                alpha = 0.0,
+                linewidth = 0.1) +
+    scale_y_continuous(trans = "log10",
+                       expand = expansion(mult = c(0, 0.35), 
+                                           add = c(0, 0))
+                       ) + #, limits = c(10,75000)) +
+    scale_colour_manual(values = cluster_palette,
+                        aesthetics = c("fill","colour"),
+                        drop = TRUE, limits = force,
+                        name = "Immune cluster") +
+    facet_grid(Label~sero_age,
+               scales = 'free_y',
+               labeller = labeller(groupwrap = label_wrap_gen(10))) +
+    theme_bw() +
+    xlab("") +
+    ylab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
+    theme(strip.background = element_blank(), strip.text.y = element_text(angle = 0),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
+          axis.text.y = element_text(size = 8),
+          legend.position = "bottom") +
+    ggpubr::stat_pvalue_manual(elisa_cluster_test.df %>% 
+                                 dplyr::mutate(y.position = log(1.5*y.position,10)),
+                                xmin = "group1", xmax = "group2", #y.position = "y.position",xmin="group1",xmax = "group2",
+                                label = "p.adj.signif",
+                                tip.length = 0,
+                                inherit.aes = FALSE) +
+    guides(colour = guide_legend(override.aes = list(alpha = 1)))
+)
 
 ```
 
@@ -9331,7 +9416,7 @@ ggplot(elisa_with_predictions.df,
                 alpha = 0.0) +
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
-    ylab("Ratio of infant high cluster to\ninfant low cluster IgG titres") +
+    ylab("Ratio of infant high cluster to\ninfant low cluster (IgG titres)") +
     scale_y_continuous(trans = "log10") +
     theme_bw()
 )
@@ -9348,8 +9433,10 @@ serotype.df <-
     dplyr::rename(allele = InferredSerotype) %>%
     dplyr::mutate(lane_type = dplyr::if_else(lane_type == "single_isolate","Single isolate","Deep sequencing"))
 
-plot_antigen_distribution(serotype.df) +
-  ylab("Serotype")
+(serotype_distribution_plot <-
+  plot_antigen_distribution(serotype.df) +
+    ylab("Serotype")
+)
 
 ```
 
@@ -9357,60 +9444,68 @@ plot_antigen_distribution(serotype.df) +
 
 ```{r Plot IgG levels prior to LRTI, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df %>%
-                  dplyr::mutate(AnyLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnyLRTIBeforeNextSample)) %>%
-                  dplyr::mutate(AnyLRTIBeforeNextSample = factor(AnyLRTIBeforeNextSample,levels = c("PneumoniaBeforeNextSample","NoPneumoniaBeforeNextSample"))),
-                "AnyLRTIBeforeNextSample",
-                x_lab = "Pneumonia diagnosis before next serum sample",
-                include_ages = c("Cord","6 months", "12 months", "18 months"),
-                wrap_len = 15)
+(igg_by_pneumonia_before_next_sample_plot <-
+  plot_igg_levels(antigen_exposure_response.df %>%
+                    dplyr::mutate(AnyLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnyLRTIBeforeNextSample)) %>%
+                    dplyr::mutate(AnyLRTIBeforeNextSample = factor(AnyLRTIBeforeNextSample,levels = c("PneumoniaBeforeNextSample","NoPneumoniaBeforeNextSample"))),
+                  "AnyLRTIBeforeNextSample",
+                  x_lab = "Pneumonia diagnosis before next serum sample",
+                  include_ages = c("Cord","6 months", "12 months", "18 months"),
+                  wrap_len = 15)
+)
 
 ```
 ```{r Plot IgG levels prior to severe LRTI, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df %>%
-                  dplyr::mutate(AnySevereLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnySevereLRTIBeforeNextSample)) %>%
-                  dplyr::mutate(AnySevereLRTIBeforeNextSample = factor(AnySevereLRTIBeforeNextSample,levels = c("SeverePneumoniaBeforeNextSample","NoSeverePneumoniaBeforeNextSample"))),
-                "AnySevereLRTIBeforeNextSample",
-                x_lab = "Severe pneumonia diagnosis before next serum sample",
-                include_ages = c("Cord","6 months", "12 months", "18 months"),
-                wrap_len = 15)
+(igg_by_severe_pneumonia_before_next_sample_plot <-
+  plot_igg_levels(antigen_exposure_response.df %>%
+                    dplyr::mutate(AnySevereLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnySevereLRTIBeforeNextSample)) %>%
+                    dplyr::mutate(AnySevereLRTIBeforeNextSample = factor(AnySevereLRTIBeforeNextSample,levels = c("SeverePneumoniaBeforeNextSample","NoSeverePneumoniaBeforeNextSample"))),
+                  "AnySevereLRTIBeforeNextSample",
+                  x_lab = "Severe pneumonia diagnosis before next serum sample",
+                  include_ages = c("Cord","6 months", "12 months", "18 months"),
+                  wrap_len = 15)
+)
 
 ```
 
 ```{r Plot IgG levels prior to very severe LRTI, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df %>%
-                  dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnyVerySevereLRTIBeforeNextSample)) %>%
-                  dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = factor(AnyVerySevereLRTIBeforeNextSample,levels = c("VerySeverePneumoniaBeforeNextSample","NoVerySeverePneumoniaBeforeNextSample"))),
-                "AnyVerySevereLRTIBeforeNextSample",
-                x_lab = "Very severe pneumonia diagnosis before next serum sample",
-                include_ages = c("Cord","6 months", "12 months", "18 months"),
-                wrap_len = 15)
+(igg_by_very_severe_pneumonia_before_next_sample_plot <-
+  plot_igg_levels(antigen_exposure_response.df %>%
+                    dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = gsub("LRTI","Pneumonia",AnyVerySevereLRTIBeforeNextSample)) %>%
+                    dplyr::mutate(AnyVerySevereLRTIBeforeNextSample = factor(AnyVerySevereLRTIBeforeNextSample,levels = c("VerySeverePneumoniaBeforeNextSample","NoVerySeverePneumoniaBeforeNextSample"))),
+                  "AnyVerySevereLRTIBeforeNextSample",
+                  x_lab = "Very severe pneumonia diagnosis before next serum sample",
+                  include_ages = c("Cord","6 months", "12 months", "18 months"),
+                  wrap_len = 15)
+)
 
 ```
 
 ``` {r Plot igg levels prior to frequent colonisation, fig.height = 11, fig.width = 8}
 
-plot_igg_levels(antigen_exposure_response.df %>%
-                  dplyr::left_join(
-                    colonisation_by_sero_code.df %>%
-                      dplyr::select(sero_specnum,Subsequent_colonisation_freq),
-                                    by = c("sero_specnum")
-                ) %>%
-                dplyr::mutate(Subsequent_colonisation_freq = factor(dplyr::if_else(
-                  Subsequent_colonisation_freq == "Frequently_colonised",
-                  "Frequently colonised",
-                  "Infrequently colonised"
+(igg_by_freq_colonisation_before_next_sample_plot <-
+  plot_igg_levels(antigen_exposure_response.df %>%
+                    dplyr::left_join(
+                      colonisation_by_sero_code.df %>%
+                        dplyr::select(sero_specnum,Subsequent_colonisation_freq),
+                                      by = c("sero_specnum")
+                  ) %>%
+                  dplyr::mutate(Subsequent_colonisation_freq = factor(dplyr::if_else(
+                    Subsequent_colonisation_freq == "Frequently_colonised",
+                    "Frequently colonised",
+                    "Infrequently colonised"
+                    ),
+                    levels = c("Frequently colonised","Infrequently colonised")
+                    )
                   ),
-                  levels = c("Frequently colonised","Infrequently colonised")
-                  )
-                ),
-                "Subsequent_colonisation_freq",
-                x_lab = "Colonisation frequency before next serum sample",
-                include_ages = c("Cord","6 months", "12 months", "18 months"),
-                rlevel = "Frequently colonised",
-                wrap_len = 15)
+                  "Subsequent_colonisation_freq",
+                  x_lab = "Colonisation frequency before next serum sample",
+                  include_ages = c("Cord","6 months", "12 months", "18 months"),
+                  rlevel = "Frequently colonised",
+                  wrap_len = 15)
+)
 
 ```
 
@@ -9522,7 +9617,7 @@ array_cluster_ratio_plot <-
                 alpha = 0.0) +
     geom_hline(yintercept = 1, linetype = 2) +
     xlab("Age") +
-    ylab("Ratio of infant high cluster to\ninfant low cluster IgG binding") +
+    ylab("Ratio of infant high cluster to\ninfant low cluster (IgG binding)") +
     scale_y_continuous(trans = "log10") +
     scale_colour_manual(values = type_palette, name = "Protein type") +
     theme_bw()
@@ -9929,8 +10024,96 @@ add_source_data(pneumonia_by_time_plot$data, name = "Fig_9b")
 add_source_data(colonisation_by_time_plot$data, name = "Fig_9c")
 
 # Supplementary Figures
-add_source_data(deep_seq.cog.frequency_source_info, name = "test_sheet")
-
+add_source_data(elisa_comparison_plot$data, name = "Supplementary_Fig_1")
+add_source_data(simlr_n_clusters_plot$data, name = "Supplementary_Fig_2")
+add_source_data(simlr_projection_plot$data, name = "Supplementary_Fig_3")
+add_source_data(igg_by_cluster_plot$data, name = "Supplementary_Fig_4")
+add_source_data(array_cluster_ratio_plot$data, name = "Supplementary_Fig_5a")
+add_source_data(elisa_cluster_ratio_plot$data, name = "Supplementary_Fig_5b")
+add_source_data(elisa_by_cluster_plot$data, name = "Supplementary_Fig_6")
+add_source_data(cps_kinetics_plot$data, name = "Supplementary_Fig_7a")
+add_source_data(cps_clustering_plot$data, name = "Supplementary_Fig_7b")
+add_source_data(igg_by_bw_plot$data, name = "Supplementary_Fig_8")
+add_source_data(igg_by_sex_plot$data, name = "Supplementary_Fig_9")
+add_source_data(igg_by_ethnicity$data, name = "Supplementary_Fig_10")
+add_source_data(igg_by_fuel_plot$data, name = "Supplementary_Fig_11")
+add_source_data(igg_by_smoking_plot$data, name = "Supplementary_Fig_12")
+add_source_data(all_individuals$data, name = "Supplementary_Fig_13")
+add_source_data(all_individuals_umap$data, name = "Supplementary_Fig_14")
+add_source_data(all_individuals_late_by_slide$data, name = "Supplementary_Fig_15")
+add_source_data(high_cluster_individuals_mid_by_cluster$data, name = "Supplementary_Fig_16a")
+add_source_data(low_cluster_individuals_mid_by_cluster$data, name = "Supplementary_Fig_16b")
+add_source_data(importance_rank_plot$data, name = "Supplementary_Fig_17a")
+add_source_data(rank_p_val_plot$data, name = "Supplementary_Fig_17b")
+add_source_data(clustering_model_comparison_plot$data, name = "Supplementary_Fig_18")
+add_source_data(simple_predicted_v_observed_plot$data, name = "Supplementary_Fig_19")
+add_source_data(aic_with_confounders_plot$data, name = "Supplementary_Fig_20")
+add_source_data(predicted_by_type_age_plot$data, name = "Supplementary_Fig_21")
+add_source_data(predicted_by_type_age_cluster_plot$data, name = "Supplementary_Fig_22")
+add_source_data(zmpB_by_age_plot$data, name = "Supplementary_Fig_23")
+add_source_data(multiprobe_cor_plot$data, name = "Supplementary_Fig_24a")
+add_source_data(zmpB_max_plot$data, name = "Supplementary_Fig_24b")
+add_source_data(zmpA_by_age_plot$data, name = "Supplementary_Fig_25")
+add_source_data(peptidase_plot$data, name = "Supplementary_Fig_26a")
+add_source_data(pspc_related_plot$data, name = "Supplementary_Fig_26b")
+add_source_data(pspc_s1_plot$data, name = "Supplementary_Fig_26c")
+add_source_data(pspc_s2_plot$data, name = "Supplementary_Fig_26d")
+add_source_data(data.frame("Note" = "Data are not numeric for this figure"), name = "Supplementary_Fig_27")
+add_source_data(final_cluster_separation$data, name = "Supplementary_Fig_28")
+add_source_data(cls01620_plot$data, name = "Supplementary_Fig_29a")
+add_source_data(cls01065_plot$data, name = "Supplementary_Fig_29b")
+add_source_data(sampling_plot$data, name = "Supplementary_Fig_30")
+add_source_data(n50_plot$data, name = "Supplementary_Fig_31a")
+add_source_data(ncontig_plot$data, name = "Supplementary_Fig_31b")
+add_source_data(assembly_qc_plot$data, name = "Supplementary_Fig_31c")
+add_source_data(serotype_distribution_plot$data, name = "Supplementary_Fig_32")
+add_source_data(pspA_mapping_plot$data, name = "Supplementary_Fig_33a")
+add_source_data(pspC_mapping_plot$data, name = "Supplementary_Fig_33b")
+add_source_data(zmpA_mapping_plot$data, name = "Supplementary_Fig_33c")
+add_source_data(zmpB_mapping_plot$data, name = "Supplementary_Fig_33d")
+add_source_data(zmpE_blast_plot$data, name = "Supplementary_Fig_34a")
+add_source_data(phage_blast_plot$data, name = "Supplementary_Fig_34b")
+add_source_data(pblB_blast_plot$data, name = "Supplementary_Fig_34c")
+add_source_data(mass_comparison_plot$data, name = "Supplementary_Fig_35")
+add_source_data(deep_seq.cog.frequency_plot$data, name = "Supplementary_Fig_36")
+add_source_data(pspA_freq_plot$data, name = "Supplementary_Fig_37a")
+add_source_data(pspC_freq_plot$data, name = "Supplementary_Fig_37b")
+add_source_data(zmpA_freq_plot$data, name = "Supplementary_Fig_37c")
+add_source_data(zmpB_freq_plot$data, name = "Supplementary_Fig_37d")
+add_source_data(single_isolate_variable_antigen_tsne$data, name = "Supplementary_Fig_38")
+add_source_data(pspA_distribution_plot$data, name = "Supplementary_Fig_39")
+add_source_data(pspC_distribution_plot$data, name = "Supplementary_Fig_40")
+add_source_data(zmpA_distribution_plot$data, name = "Supplementary_Fig_41")
+add_source_data(zmpB_distribution_plot$data, name = "Supplementary_Fig_42")
+add_source_data(antigen_pop_frequency_plot$data, name = "Supplementary_Fig_43")
+add_source_data(first_exposure_plot$data, name = "Supplementary_Fig_44a")
+add_source_data(colonisation_frequency_categorisation_plot$data, name = "Supplementary_Fig_44b")
+add_source_data(early_colonisation_late_clustering$data, name = "Supplementary_Fig_44c")
+add_source_data(igg_by_month_1_exposure$data, name = "Supplementary_Fig_45")
+add_source_data(igg_by_month_6_exposure$data, name = "Supplementary_Fig_46")
+add_source_data(igg_by_prior_month_exposure$data, name = "Supplementary_Fig_47")
+add_source_data(igg_by_prior_6_month_exposure$data, name = "Supplementary_Fig_48")
+add_source_data(response_model_comparisons_plot$data, name = "Supplementary_Fig_49")
+add_source_data(exposure_model_predictions_plot$data, name = "Supplementary_Fig_50")
+add_source_data(individuals_comparison_plot$data, name = "Supplementary_Fig_51")
+add_source_data(antigen_exposures_since_birth_large_plot$data, name = "Supplementary_Fig_52")
+add_source_data(change_by_age_and_exposure_plot$data, name = "Supplementary_Fig_53")
+add_source_data(pspC_cor_plot$data, name = "Supplementary_Fig_54")
+add_source_data(zmpA_cor_plot$data, name = "Supplementary_Fig_55")
+add_source_data(zmpB_cor_plot$data, name = "Supplementary_Fig_56")
+add_source_data(igg_by_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_57")
+add_source_data(igg_by_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_58")
+add_source_data(igg_by_severe_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_59")
+add_source_data(igg_by_severe_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_60")
+add_source_data(igg_by_very_severe_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_61")
+add_source_data(igg_by_very_severe_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_62")
+add_source_data(first_cps_plot$data, name = "Supplementary_Fig_63a")
+add_source_data(second_cps_plot$data, name = "Supplementary_Fig_63b")
+add_source_data(igg_by_freq_colonisation_since_last_sample_plot$data, name = "Supplementary_Fig_64")
+add_source_data(igg_by_freq_colonisation_before_next_sample_plot$data, name = "Supplementary_Fig_65")
+add_source_data(antigen_response_protection_model_aic_plot$data, name = "Supplementary_Fig_66")
+add_source_data(modelling_response_protection_after_exposure_plot$data, name = "Supplementary_Fig_67")
+add_source_data(exposure_protection_model_predictions_plot$data, name = "Supplementary_Fig_68")
 
 ```
 
