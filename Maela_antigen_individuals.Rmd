@@ -3314,7 +3314,7 @@ antigen_exposure_response.df %<>%
 
 plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
                             include_ages = c("6 months", "12 months", "18 months", "24 months"),
-                            wrap_len = 25, alpha_val = 0.5, step_increase_val = 0.12) {
+                            wrap_len = 25, alpha_val = 0.5, step_increase_val = 0.12, p_val_size = 3.88) {
   
   ref_level <- rlevel
   if (is.null(ref_level)) {
@@ -3373,14 +3373,19 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
   ggplot(df,
          aes(y = igg,
              x = !!col_var,
-             colour = !!col_var,
-             fill = !!col_var)) +
+             colour = !!col_var)) +
     geom_point(position = position_jitter(), alpha = alpha_val, size = 0.25) +
-    geom_violin(alpha = 0, colour = "black", draw_quantiles = c(0.5),
+    geom_violin(data = df %>%
+                  dplyr::group_by(sero_age,type,!!col_var) %>%
+                  dplyr::mutate(violin_group_count = n()) %>%
+                  dplyr::ungroup() %>%
+                  dplyr::filter(violin_group_count >= 3),
+                alpha = 0, colour = "black", draw_quantiles = c(0.5),
                scale = "width") +
     facet_grid(type~sero_age) +
     ggpubr::stat_pvalue_manual(test.df,
                          tip.length = 0,
+                         size = p_val_size,
                          label = "{scales::pvalue(p.adj)}",
                          inherit.aes = FALSE) +
     theme_bw() +
@@ -3392,9 +3397,8 @@ plot_igg_levels <- function(df,var,rlevel = NULL,x_lab = NULL,
           legend.position = "bottom",
           legend.title = element_blank(),
           strip.background = element_blank()) +
-    guides(colour = guide_legend(override.aes = list(size=1, alpha = 1),
-                                 title = x_lab),
-           fill = guide_legend(override.aes = list(size=1, alpha = 1),
+    guides(
+           colour = guide_legend(override.aes = list(size=1, alpha = 1),
                                  title = x_lab))
   
 }
@@ -3862,7 +3866,8 @@ ggplot(antigen_exposure_response.df,
                   "cluster",
                   rlevel = "Infant low",
                   x_lab = "Immune cluster",
-                  step_increase_val = 0.25,
+                  step_increase_val = 0.5,
+                  p_val_size = 2,
                   include_ages = c("Cord", "Birth", "6 months", "12 months", 
   "18 months", "24 months"),
                   wrap_len = 25) +
@@ -5431,7 +5436,7 @@ cluster_test.df <-
       rstatix::add_xy_position(x = "type", dodge = 1)
 
 (final_cluster_separation <-
-    ggplot(maternal_levels_and_clusters.df,
+    ggplot(maternal_levels_and_clusters.df %>% dplyr::filter(igg >= -2),
        aes(x = type,
            y = igg,
            colour = final_cluster,
@@ -5444,7 +5449,10 @@ cluster_test.df <-
               colour = "black",
                scale = "width") +
   ggpubr::stat_pvalue_manual(cluster_test.df,
-                              label = "p.adj.signif",
+                             hide.ns = TRUE,
+                              #label = "p.adj.signif",
+                              label = "{scales::pvalue(p.adj)}",
+                              size = 2,
                               tip.length = 0,
                               inherit.aes = FALSE) +
   facet_wrap(.~Age, ncol = 2) +
@@ -6640,6 +6648,7 @@ if (!("type" %in% colnames(antigen_exposure_response_environment.df))) {
                   "mother_ethnic_group",
                   x_lab = "Ethnic group of mother",
                   wrap_len = 15,
+                  p_val_size = 2,
                   step_increase_val = 0.2,
                   include_ages = c("Cord", "Birth", "6 months", "12 months", 
   "18 months", "24 months"))
@@ -6804,6 +6813,7 @@ plot_igg_levels(antigen_exposure_response_environment.df,
                   "house_fuel",
                   x_lab = "Fuel used for house fire",
                   wrap_len = 15,
+                  p_val_size = 2,
                   include_ages = c("Cord", "Birth", "6 months", "12 months", 
   "18 months", "24 months"))
 )
@@ -9272,7 +9282,7 @@ env_model_comparison.df <-
 
 ```
 
-```{r Tabulate env model comparisons}
+```{r Tabulate env model comparisons, eval = FALSE}
 
 env_model_comparison.df %>%
   kableExtra::kable() %>%
@@ -9347,16 +9357,26 @@ elisa_cluster_test.df <-
         rstatix::add_xy_position(x = "cluster", dodge = 1, scales = "free_y") %>%
         dplyr::filter(p.adj.signif != "ns")
 
+min_elisa_value <- min(elisa.df$Elisa_value[elisa.df$Elisa_value > 0])
+
 (elisa_by_cluster_plot <-
-  ggplot(elisa.df,
+  ggplot(elisa.df %>%
+           dplyr::mutate(Elisa_value = dplyr::if_else(Elisa_value == 0, min_elisa_value/2, Elisa_value)),
          aes(x = cluster,
              y = Elisa_value,
              colour = cluster,
-             fill = cluster)) +
+             #fill = cluster
+             )) +
     geom_point(size = 0.025,
                alpha = 1,
                position = position_jitter()) +
-    geom_violin(draw_quantiles = c(0.5),
+    geom_violin(data = elisa.df %>%
+           dplyr::mutate(Elisa_value = dplyr::if_else(Elisa_value == 0, min_elisa_value, Elisa_value)) %>%
+           dplyr::group_by(Label,sero_age,cluster) %>%
+           dplyr::mutate(group_count = n()) %>%
+           dplyr::ungroup() %>%
+           dplyr::filter(group_count >= 3),
+                draw_quantiles = c(0.5),
                 scale = "width",
                 colour = "black",
                 alpha = 0.0,
@@ -9366,7 +9386,7 @@ elisa_cluster_test.df <-
                                            add = c(0, 0))
                        ) + #, limits = c(10,75000)) +
     scale_colour_manual(values = cluster_palette,
-                        aesthetics = c("fill","colour"),
+                        #aesthetics = c("fill","colour"),
                         drop = TRUE, limits = force,
                         name = "Immune cluster") +
     facet_grid(Label~sero_age,
@@ -9375,17 +9395,19 @@ elisa_cluster_test.df <-
     theme_bw() +
     xlab("") +
     ylab(expression('ELISA IgG titre (mg L'^{-1}*')')) +
-    theme(strip.background = element_blank(), strip.text.y = element_text(angle = 0),
+    theme(strip.background = element_blank(), strip.text.y = element_text(angle = 0, size = 6),
           axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7),
-          axis.text.y = element_text(size = 8),
+          axis.text.y = element_text(size = 6),
           legend.position = "bottom") +
     ggpubr::stat_pvalue_manual(elisa_cluster_test.df %>% 
                                  dplyr::mutate(y.position = log(1.5*y.position,10)),
                                 xmin = "group1", xmax = "group2", #y.position = "y.position",xmin="group1",xmax = "group2",
-                                label = "p.adj.signif",
+                                # label = "p.adj.signif",
+                                label = "{scales::pvalue(p.adj)}",
                                 tip.length = 0,
+                                size = 2,
                                 inherit.aes = FALSE) +
-    guides(colour = guide_legend(override.aes = list(alpha = 1)))
+    guides(colour = guide_legend(override.aes = list(alpha = 1, size = 1)))
 )
 
 ```
@@ -10004,28 +10026,53 @@ AIC(inheritance_and_exposure_since_birth.protection.antigen_model,inheritance_an
 
 ## Editorial changes
 
-``` {r Generate source data file}
+This is switched off by default because openxlsx cannot be installed without affecting the versions of other packages.
 
-source_data_prefix <- "NCOMMS-23-35488B"
+``` {r Generate source data file, eval = FALSE}
 
-add_source_data <- function(df = NULL, name = NULL, rownames_on = FALSE, append_on = TRUE, fn = source_data_prefix) {
-  openxlsx::write.xlsx(as.data.frame(df),
+source_data_fn <- "Maela_pneumococcal_panproteome_source_data.xlsx"
+
+source_data_xlsx <- openxlsx::createWorkbook()
+
+add_source_data <- function(df, name = NULL, obj = source_data_xlsx) {
+  
+  openxlsx::addWorksheet(obj, name)
+  openxlsx::writeData(obj,
+                      sheet = name,
+                      x = as.data.frame(df %>%
+                                       mutate(across(where(is.list), as.character)))
+  )
+  
+}
+
+add_source_data_file <- function(df = NULL, name = NULL, rownames_on = FALSE, append_on = TRUE, prefix = source_data_fn) {
+  openxlsx::write.xlsx(as.data.frame(df %>%
+                                       mutate(across(where(is.list), as.character))),
                  paste0(source_data_prefix,"_",name,".xlsx"), 
                  sheetName=name, 
-                 col.names = TRUE,
-                 row.names = rownames_on, 
+                 colNames = TRUE,
+                 rowNames = rownames_on, 
                  showNA=TRUE,
                  append=append_on) 
 }
 
+add_source_data_csv <- function(df = NULL, name = NULL, rownames_on = FALSE, append_on = TRUE, fn = source_data_fn) {
+  write.csv(as.data.frame(df %>%
+                                       mutate(across(where(is.list), as.character))),
+                 paste0(fn,"_",name,".csv"), 
+                 col.names = TRUE,
+                 row.names = rownames_on) 
+}
+
 # Figure 1
-add_source_data(clustering_by_age_plot$data, name = "Fig_1a", append_on = FALSE)
+add_source_data(clustering_by_age_plot$data, name = "Fig_1a")
 add_source_data(birth_weight_plot$data, name = "Fig_1b")
 add_source_data(env_or_plot$data, name = "Fig_1c")
 add_source_data(all_individuals_early_by_cluster$data, name = "Fig_1d")
 add_source_data(all_individuals_just_late_by_cluster$data, name = "Fig_1e")
 # Figure 2
-add_source_data(model_comp_raw_data_plot$data, name = "Fig_2a")
+#add_source_data(model_comp_raw_data_plot$layers[[2]]$data, name = "Fig_2a")
+add_source_data(igg_prediction.df, name = "Fig_2a")
 add_source_data(first_last_plot$data, name = "Fig_2b")
 add_source_data(simple_mef_type_plot$data, name = "Fig_2c")
 # Figure 3
@@ -10036,12 +10083,16 @@ add_source_data(hmab_plot$data, name = "Fig_3c")
 add_source_data(early_sample_correlations_plot$data, name = "Fig_4a")
 add_source_data(late_sample_correlations_plot$data, name = "Fig_4b")
 # Figure 5
-add_source_data(figure_5_plot$data, name = "Fig_5")
+add_source_data(igg_by_freq_colonisation_before_next_sample_plot$data,
+                name = "Fig_5")
 # Figure 6
 add_source_data(modelling_response_after_exposure_plot$data, name = "Fig_6a")
 add_source_data(response_by_exposures_plot$data, name = "Fig_6b")
 # Figure 7
-add_source_data(changes_by_age_plot$data, name = "Fig_7")
+#add_source_data(changes_by_age_plot$data %>%
+add_source_data(changes_by_age.df %>%
+                  dplyr::select(antigen,type,sero_age,codenum,different_from_mean,igg_delta),
+                name = "Fig_7")
 # Figure 8
 add_source_data(pspA_cor_plot$data, name = "Fig_8")
 # Figure 9
@@ -10053,17 +10104,17 @@ add_source_data(colonisation_by_time_plot$data, name = "Fig_9c")
 add_source_data(elisa_comparison_plot$data, name = "Supplementary_Fig_1")
 add_source_data(simlr_n_clusters_plot$data, name = "Supplementary_Fig_2")
 add_source_data(simlr_projection_plot$data, name = "Supplementary_Fig_3")
-add_source_data(igg_by_cluster_plot$data, name = "Supplementary_Fig_4")
+#add_source_data(igg_by_cluster_plot$data, name = "Supplementary_Fig_4")
 add_source_data(array_cluster_ratio_plot$data, name = "Supplementary_Fig_5a")
 add_source_data(elisa_cluster_ratio_plot$data, name = "Supplementary_Fig_5b")
 add_source_data(elisa_by_cluster_plot$data, name = "Supplementary_Fig_6")
 add_source_data(cps_kinetics_plot$data, name = "Supplementary_Fig_7a")
 add_source_data(cps_clustering_plot$data, name = "Supplementary_Fig_7b")
-add_source_data(igg_by_bw_plot$data, name = "Supplementary_Fig_8")
-add_source_data(igg_by_sex_plot$data, name = "Supplementary_Fig_9")
-add_source_data(igg_by_ethnicity$data, name = "Supplementary_Fig_10")
-add_source_data(igg_by_fuel_plot$data, name = "Supplementary_Fig_11")
-add_source_data(igg_by_smoking_plot$data, name = "Supplementary_Fig_12")
+#add_source_data(igg_by_bw_plot$data, name = "Supplementary_Fig_8")
+#add_source_data(igg_by_sex_plot$data, name = "Supplementary_Fig_9")
+#add_source_data(igg_by_ethnicity$data, name = "Supplementary_Fig_10")
+#add_source_data(igg_by_fuel_plot$data, name = "Supplementary_Fig_11")
+#add_source_data(igg_by_smoking_plot$data, name = "Supplementary_Fig_12")
 add_source_data(all_individuals$data, name = "Supplementary_Fig_13")
 add_source_data(all_individuals_umap$data, name = "Supplementary_Fig_14")
 add_source_data(all_individuals_late_by_slide$data, name = "Supplementary_Fig_15")
@@ -10072,7 +10123,13 @@ add_source_data(low_cluster_individuals_mid_by_cluster$data, name = "Supplementa
 add_source_data(importance_rank_plot$data, name = "Supplementary_Fig_17a")
 add_source_data(rank_p_val_plot$data, name = "Supplementary_Fig_17b")
 add_source_data(clustering_model_comparison_plot$data, name = "Supplementary_Fig_18")
-add_source_data(simple_predicted_v_observed_plot$data, name = "Supplementary_Fig_19")
+add_source_data(simple_predicted_v_observed_plot$data %>%
+                  dplyr::select(igg,Prediction) %>%
+                  dplyr::mutate(
+                    igg = round(igg,2),
+                    Prediction = round(Prediction,2)
+                  ),
+                name = "Supplementary_Fig_19")
 add_source_data(aic_with_confounders_plot$data, name = "Supplementary_Fig_20")
 add_source_data(predicted_by_type_age_plot$data, name = "Supplementary_Fig_21")
 add_source_data(predicted_by_type_age_cluster_plot$data, name = "Supplementary_Fig_22")
@@ -10080,10 +10137,21 @@ add_source_data(zmpB_by_age_plot$data, name = "Supplementary_Fig_23")
 add_source_data(multiprobe_cor_plot$data, name = "Supplementary_Fig_24a")
 add_source_data(zmpB_max_plot$data, name = "Supplementary_Fig_24b")
 add_source_data(zmpA_by_age_plot$data, name = "Supplementary_Fig_25")
-add_source_data(peptidase_plot$data, name = "Supplementary_Fig_26a")
-add_source_data(pspc_related_plot$data, name = "Supplementary_Fig_26b")
-add_source_data(pspc_s1_plot$data, name = "Supplementary_Fig_26c")
-add_source_data(pspc_s2_plot$data, name = "Supplementary_Fig_26d")
+add_source_data(peptidase_plot$data %>%
+                  dplyr::select(sero_sample,
+                                Query,
+                                Gene,
+                                Gene.ID,
+                                probe_type,
+                                PspC_relate_1,
+                                PspC_subgroup_1,
+                                PspC_subgroup_2,
+                                Peptidase_M26_N,
+                                igg),
+                name = "Supplementary_Fig_26")
+# add_source_data(pspc_related_plot$data, name = "Supplementary_Fig_26b")
+# add_source_data(pspc_s1_plot$data, name = "Supplementary_Fig_26c")
+# add_source_data(pspc_s2_plot$data, name = "Supplementary_Fig_26d")
 add_source_data(data.frame("Note" = "Data are not numeric for this figure"), name = "Supplementary_Fig_27")
 add_source_data(final_cluster_separation$data, name = "Supplementary_Fig_28")
 add_source_data(cls01620_plot$data, name = "Supplementary_Fig_29a")
@@ -10093,10 +10161,30 @@ add_source_data(n50_plot$data, name = "Supplementary_Fig_31a")
 add_source_data(ncontig_plot$data, name = "Supplementary_Fig_31b")
 add_source_data(assembly_qc_plot$data, name = "Supplementary_Fig_31c")
 add_source_data(serotype_distribution_plot$data, name = "Supplementary_Fig_32")
-add_source_data(pspA_mapping_plot$data, name = "Supplementary_Fig_33a")
-add_source_data(pspC_mapping_plot$data, name = "Supplementary_Fig_33b")
-add_source_data(zmpA_mapping_plot$data, name = "Supplementary_Fig_33c")
-add_source_data(zmpB_mapping_plot$data, name = "Supplementary_Fig_33d")
+add_source_data(ggplot_build(pspA_mapping_plot)$data[[1]] %>%
+                  dplyr::mutate(Rank = dplyr::if_else(fill == "#F8766D","Lower ranks","Top rank")) %>%
+                  dplyr::mutate(Genome = dplyr::if_else(PANEL == 1,"Deep sequencing","Single isolate")) %>%
+                  dplyr::rename(`Alignments to reference allele` = x) %>%
+                  dplyr::select(Genome,`Alignments to reference allele`,Rank,density,count,n),
+                name = "Supplementary_Fig_33a")
+add_source_data(ggplot_build(pspC_mapping_plot)$data[[1]] %>%
+                  dplyr::mutate(Rank = dplyr::if_else(fill == "#F8766D","Lower ranks","Top rank")) %>%
+                  dplyr::mutate(Genome = dplyr::if_else(PANEL == 1,"Deep sequencing","Single isolate")) %>%
+                  dplyr::rename(`Alignments to reference allele` = x) %>%
+                  dplyr::select(Genome,`Alignments to reference allele`,Rank,density,count,n),
+                name = "Supplementary_Fig_33b")
+add_source_data(ggplot_build(zmpA_mapping_plot)$data[[1]] %>%
+                  dplyr::mutate(Rank = dplyr::if_else(fill == "#F8766D","Lower ranks","Top rank")) %>%
+                  dplyr::mutate(Genome = dplyr::if_else(PANEL == 1,"Deep sequencing","Single isolate")) %>%
+                  dplyr::rename(`Binary Jaccard similarity` = x) %>%
+                  dplyr::select(Genome,`Binary Jaccard similarity`,Rank,density,count,n),
+                name = "Supplementary_Fig_33c")
+add_source_data(ggplot_build(zmpB_mapping_plot)$data[[1]] %>%
+                  dplyr::mutate(Rank = dplyr::if_else(fill == "#F8766D","Lower ranks","Top rank")) %>%
+                  dplyr::mutate(Genome = dplyr::if_else(PANEL == 1,"Deep sequencing","Single isolate")) %>%
+                  dplyr::rename(`Binary Jaccard similarity` = x) %>%
+                  dplyr::select(Genome,`Binary Jaccard similarity`,Rank,density,count,n),
+                name = "Supplementary_Fig_33d")
 add_source_data(zmpE_blast_plot$data, name = "Supplementary_Fig_34a")
 add_source_data(phage_blast_plot$data, name = "Supplementary_Fig_34b")
 add_source_data(pblB_blast_plot$data, name = "Supplementary_Fig_34c")
@@ -10115,10 +10203,10 @@ add_source_data(antigen_pop_frequency_plot$data, name = "Supplementary_Fig_43")
 add_source_data(first_exposure_plot$data, name = "Supplementary_Fig_44a")
 add_source_data(colonisation_frequency_categorisation_plot$data, name = "Supplementary_Fig_44b")
 add_source_data(early_colonisation_late_clustering$data, name = "Supplementary_Fig_44c")
-add_source_data(igg_by_month_1_exposure$data, name = "Supplementary_Fig_45")
-add_source_data(igg_by_month_6_exposure$data, name = "Supplementary_Fig_46")
-add_source_data(igg_by_prior_month_exposure$data, name = "Supplementary_Fig_47")
-add_source_data(igg_by_prior_6_month_exposure$data, name = "Supplementary_Fig_48")
+#add_source_data(igg_by_month_1_exposure$data, name = "Supplementary_Fig_45")
+#add_source_data(igg_by_month_6_exposure$data, name = "Supplementary_Fig_46")
+#add_source_data(igg_by_prior_month_exposure$data, name = "Supplementary_Fig_47")
+#add_source_data(igg_by_prior_6_month_exposure$data, name = "Supplementary_Fig_48")
 add_source_data(response_model_comparisons_plot$data, name = "Supplementary_Fig_49")
 add_source_data(exposure_model_predictions_plot$data, name = "Supplementary_Fig_50")
 add_source_data(individuals_comparison_plot$data, name = "Supplementary_Fig_51")
@@ -10127,19 +10215,28 @@ add_source_data(change_by_age_and_exposure_plot$data, name = "Supplementary_Fig_
 add_source_data(pspC_cor_plot$data, name = "Supplementary_Fig_54")
 add_source_data(zmpA_cor_plot$data, name = "Supplementary_Fig_55")
 add_source_data(zmpB_cor_plot$data, name = "Supplementary_Fig_56")
-add_source_data(igg_by_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_57")
-add_source_data(igg_by_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_58")
-add_source_data(igg_by_severe_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_59")
-add_source_data(igg_by_severe_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_60")
-add_source_data(igg_by_very_severe_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_61")
-add_source_data(igg_by_very_severe_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_62")
+#add_source_data(igg_by_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_57")
+#add_source_data(igg_by_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_58")
+#add_source_data(igg_by_severe_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_59")
+#add_source_data(igg_by_severe_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_60")
+#add_source_data(igg_by_very_severe_pneumonia_since_last_sample_plot$data, name = "Supplementary_Fig_61")
+#add_source_data(igg_by_very_severe_pneumonia_before_next_sample_plot$data, name = "Supplementary_Fig_62")
 add_source_data(first_cps_plot$data, name = "Supplementary_Fig_63a")
 add_source_data(second_cps_plot$data, name = "Supplementary_Fig_63b")
-add_source_data(igg_by_freq_colonisation_since_last_sample_plot$data, name = "Supplementary_Fig_64")
-add_source_data(igg_by_freq_colonisation_before_next_sample_plot$data, name = "Supplementary_Fig_65")
+#add_source_data(igg_by_freq_colonisation_since_last_sample_plot$data, name = "Supplementary_Fig_64")
+# add_source_data(igg_by_freq_colonisation_before_next_sample_plot$data,
+#                 name = "Supplementary_Fig_65")
 add_source_data(antigen_response_protection_model_aic_plot$data, name = "Supplementary_Fig_66")
 add_source_data(modelling_response_protection_after_exposure_plot$data, name = "Supplementary_Fig_67")
-add_source_data(exposure_protection_model_predictions_plot$data, name = "Supplementary_Fig_68")
+add_source_data(exposure_protection_model_predictions_plot$data %>%
+                  dplyr::select(Exposed,igg,predicted) %>%
+                  dplyr::mutate(
+                    igg = round(igg,2),
+                    predicted = round(predicted,2)
+                  ),
+                name = "Supplementary_Fig_68")
+
+openxlsx::saveWorkbook(source_data_xlsx, source_data_fn)
 
 ```
 
